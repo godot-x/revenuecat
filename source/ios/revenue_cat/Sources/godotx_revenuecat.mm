@@ -1,4 +1,5 @@
 #import "godotx_revenuecat.h"
+#import "godotx_revenuecat_paywall_delegate.h"
 #import <Foundation/Foundation.h>
 
 @import RevenueCat;
@@ -22,7 +23,8 @@ GodotxRevenueCat *GodotxRevenueCat::instance = nullptr;
 
 @end
 
-static GodotxRevenueCatDelegate *s_delegate = nil;
+static GodotxRevenueCatDelegate *s_delegate = nullptr;
+static GodotxRevenueCatPaywallDelegate *pw_delegate = nullptr;
 
 GodotxRevenueCat *GodotxRevenueCat::get_singleton() {
     return instance;
@@ -301,17 +303,13 @@ void GodotxRevenueCat::present_paywall(String offering_id) {
                 return;
             }
             
-            RCPaywallViewController *pw = [[RCPaywallViewController alloc] initWithOffering:off
-                                                                         displayCloseButton:YES
-                                                                     shouldBlockTouchEvents:NO
-                                                                    dismissRequestedHandler:^(RCPaywallViewController *vc) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [vc dismissViewControllerAnimated:YES completion:nil];
-                    Dictionary cancel;
-                    cancel["status"] = "cancelled";
-                    GodotxRevenueCat::get_singleton()->emit_signal("paywall_result", cancel);
-                });
-            }];
+            RCPaywallViewController *pw = [[RCPaywallViewController alloc] initWithOffering:off displayCloseButton:YES shouldBlockTouchEvents:NO dismissRequestedHandler:nil];
+            
+            if (pw_delegate == nullptr) {
+                pw_delegate = [GodotxRevenueCatPaywallDelegate new];
+            }
+            
+            pw.delegate = pw_delegate;
             
             [root presentViewController:pw animated:YES completion:nil];
         });
