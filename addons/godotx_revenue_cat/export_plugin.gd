@@ -39,7 +39,7 @@ class AndroidExportPlugin extends EditorExportPlugin:
 		# Enable RevenueCat
 		options.append({
 			"option": {
-				"name": "revenuecat/enable_revenuecat",
+				"name": "revenue_cat/enable_revenue_cat",
 				"type": TYPE_BOOL
 			},
 			"default_value": true
@@ -48,7 +48,7 @@ class AndroidExportPlugin extends EditorExportPlugin:
 		# RevenueCat version
 		options.append({
 			"option": {
-				"name": "revenuecat/revenuecat_version",
+				"name": "revenue_cat/revenue_cat_version",
 				"type": TYPE_STRING
 			},
 			"default_value": "9.13.0"
@@ -57,7 +57,7 @@ class AndroidExportPlugin extends EditorExportPlugin:
 		# RevenueCat UI version
 		options.append({
 			"option": {
-				"name": "revenuecat/revenuecat_ui_version",
+				"name": "revenue_cat/revenue_cat_ui_version",
 				"type": TYPE_STRING
 			},
 			"default_value": "9.13.0"
@@ -69,17 +69,17 @@ class AndroidExportPlugin extends EditorExportPlugin:
 	func _get_android_dependencies(platform: EditorExportPlatform, debug: bool) -> PackedStringArray:
 		var dependencies: PackedStringArray = []
 		
-		# RevenueCat
-		if get_option("revenuecat/enable_revenuecat"):
-			var version = get_option("revenuecat/revenuecat_version")
+		if get_option("revenue_cat/enable_revenue_cat"):
+			# core
+			var version = get_option("revenue_cat/revenue_cat_version")
 			dependencies.append("com.revenuecat.purchases:purchases:" + version)
 			print("[RevenueCat] Adding RevenueCat dependency (v%s)" % version)
-		
-		# RevenueCat UI
-		if get_option("revenuecat/enable_revenuecat_ui"):
-			var version = get_option("revenuecat/revenuecat_ui_version")
-			dependencies.append("com.revenuecat.purchases:purchases-ui:" + version)
-			print("[RevenueCat] Adding RevenueCat UI dependency (v%s)" % version)
+
+			# ui
+			var version_ui = get_option("revenue_cat/revenue_cat_ui_version")
+			dependencies.append("com.revenuecat.purchases:purchases-ui:" + version_ui)
+			print("[RevenueCat] Adding RevenueCat UI dependency (v%s)" % version_ui)
+
 		
 		return dependencies
 
@@ -91,7 +91,7 @@ class AndroidExportPlugin extends EditorExportPlugin:
 		# List of modules to check (in order)
 		var modules: Array[String] = []
 		
-		if get_option("revenuecat/enable_revenuecat"):
+		if get_option("revenue_cat/enable_revenue_cat"):
 			modules.append("revenue_cat")
 		
 		# Search for AARs in each module's directory

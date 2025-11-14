@@ -2,6 +2,7 @@
 #define GODOTX_REVENUECAT_H
 
 #include "core/object/class_db.h"
+#include "core/variant/variant.h"
 
 class GodotxRevenueCat : public Object {
     GDCLASS(GodotxRevenueCat, Object);

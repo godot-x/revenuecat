@@ -302,10 +302,10 @@ package:
 	@echo "→ Copying addons..."
 	@cp -a addons godotx_revenuecat/
 	@echo "→ Copying iOS plugin..."
-	@cp -a ios/plugins/revenuecat godotx_revenuecat/ios/
+	@cp -a ios/plugins/revenue_cat godotx_revenuecat/ios/
 	@echo "→ Copying Android plugin..."
 	@mkdir -p godotx_revenuecat/android
-	@cp -a android/revenuecat godotx_revenuecat/android/
+	@cp -a android/revenue_cat godotx_revenuecat/android/
 	@echo "→ Creating zip archive..."
 	@zip -ry godotx_revenuecat.zip godotx_revenuecat
 	@rm -rf godotx_revenuecat

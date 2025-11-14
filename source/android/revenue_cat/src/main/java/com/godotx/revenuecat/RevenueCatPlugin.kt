@@ -2,7 +2,6 @@ package com.godotx.revenuecat
 
 import android.app.Activity
 import android.util.Log
-import androidx.activity.result.ActivityResultCaller
 import com.revenuecat.purchases.CacheFetchPolicy
 import com.revenuecat.purchases.CustomerInfo
 import com.revenuecat.purchases.LogLevel
@@ -20,78 +19,105 @@ import com.revenuecat.purchases.interfaces.ReceiveCustomerInfoCallback
 import com.revenuecat.purchases.interfaces.ReceiveOfferingsCallback
 import com.revenuecat.purchases.models.StoreProduct
 import com.revenuecat.purchases.models.StoreTransaction
-import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallActivityLauncher
-import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallResult
-import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallResultHandler
 import org.godotengine.godot.Dictionary
 import org.godotengine.godot.Godot
 import org.godotengine.godot.plugin.GodotPlugin
 import org.godotengine.godot.plugin.SignalInfo
 import org.godotengine.godot.plugin.UsedByGodot
 
-
-class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot), PaywallResultHandler {
+class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
 
     companion object {
         private val TAG = RevenueCatPlugin::class.java.simpleName
     }
 
-    private var paywallActivityLauncher: PaywallActivityLauncher? = null
+    private var paywallReceiver: android.content.BroadcastReceiver? = null
 
-    override fun getPluginName(): String = "GodotxRevenueCat"
-
-    override fun getPluginSignals(): Set<SignalInfo> = setOf(
-        SignalInfo("customer_info_changed", Dictionary::class.java),
-        SignalInfo("customer_info", Dictionary::class.java),
-        SignalInfo("purchase_result", Dictionary::class.java),
-        SignalInfo("offerings", Dictionary::class.java),
-        SignalInfo("products", Array<Dictionary>::class.java),
-        SignalInfo("login_finished", Dictionary::class.java),
-        SignalInfo("logout_finished", Dictionary::class.java),
-        SignalInfo("subscriber", Boolean::class.java),
-        SignalInfo("entitlement", String::class.java, Boolean::class.java),
-        SignalInfo("paywall_result", String::class.java, String::class.java)
-    )
-
-    private fun act(): Activity? {
-        val a = activity
-        if (a == null) Log.e(TAG, "Activity is null")
-        return a
+    override fun getPluginName(): String {
+        return "GodotxRevenueCat"
     }
 
-    private fun initPaywallLauncher(activity: Activity) {
-        val caller = activity as? ActivityResultCaller
-        if (caller == null) {
-            Log.e(TAG, "Paywall not available: host does not implement ActivityResultCaller")
-            return
-        }
-        paywallActivityLauncher = PaywallActivityLauncher(
-            resultCaller = caller,
-            resultHandler = this
+    override fun getPluginSignals(): Set<SignalInfo> {
+        return setOf(
+            SignalInfo("customer_info_changed", Dictionary::class.java),
+            SignalInfo("customer_info", Dictionary::class.java),
+            SignalInfo("purchase_result", Dictionary::class.java),
+            SignalInfo("offerings", Dictionary::class.java),
+            SignalInfo("products", Array<Dictionary>::class.java),
+            SignalInfo("login_finished", Dictionary::class.java),
+            SignalInfo("logout_finished", Dictionary::class.java),
+            SignalInfo("subscriber", Boolean::class.javaObjectType),
+            SignalInfo("entitlement", String::class.java, Boolean::class.javaObjectType),
+            SignalInfo("paywall_result", Dictionary::class.java)
         )
     }
 
-    // safe dictionary creation for Godot
+    private fun act(): Activity? {
+        val a = activity
+        if (a == null) {
+            Log.e(TAG, "Activity is null")
+        }
+        return a
+    }
+
     private fun dictOf(vararg pairs: Pair<String, Any?>): Dictionary {
         val d = Dictionary()
         for ((k, v) in pairs) {
-            d[k] = v ?: ""   // never return Any()
+            d[k] = v ?: ""
         }
         return d
+    }
+
+    private fun emitOnMain(name: String, vararg args: Any?) {
+        val a = act()
+        if (a == null) {
+            return
+        }
+
+        a.runOnUiThread {
+            emitSignal(name, *args)
+        }
     }
 
     @UsedByGodot
     fun initialize(api_key: String, user_id: String, debug: Boolean) {
         val a = act() ?: return
 
+        // registro do receiver apenas uma vez
+        if (paywallReceiver == null) {
+            paywallReceiver = object : android.content.BroadcastReceiver() {
+                override fun onReceive(
+                    context: android.content.Context?,
+                    intent: android.content.Intent?
+                ) {
+                    val status = intent?.getStringExtra("status") ?: "unknown"
+                    val reason = intent?.getStringExtra("reason") ?: ""
+
+                    val d = Dictionary()
+                    d["status"] = status
+                    if (reason.isNotEmpty()) {
+                        d["reason"] = reason
+                    }
+
+                    emitOnMain("paywall_result", d)
+                }
+            }
+
+            val filter = android.content.IntentFilter("RC_PAYWALL_RESULT")
+            a.registerReceiver(paywallReceiver, filter)
+        }
+
+        // Inicializa o SDK normal
         Purchases.logLevel = if (debug) LogLevel.DEBUG else LogLevel.ERROR
 
         val builder = PurchasesConfiguration.Builder(a, api_key)
-        if (user_id.isNotEmpty()) builder.appUserID(user_id)
+        if (user_id.isNotEmpty()) {
+            builder.appUserID(user_id)
+        }
+
         Purchases.configure(builder.build())
 
         get_customer_info()
-        initPaywallLauncher(a)
     }
 
     @UsedByGodot
@@ -99,12 +125,13 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot), PaywallResultHandler 
         Purchases.sharedInstance.getCustomerInfo(
             CacheFetchPolicy.CACHED_OR_FETCHED,
             object : ReceiveCustomerInfoCallback {
+
                 override fun onError(error: PurchasesError) {
-                    emitSignal("customer_info", dictOf("error" to error.message))
+                    emitOnMain("customer_info", dictOf("error" to error.message))
                 }
 
                 override fun onReceived(customerInfo: CustomerInfo) {
-                    emitSignal(
+                    emitOnMain(
                         "customer_info",
                         dictOf("active_entitlements" to customerInfo.entitlements.active.size)
                     )
@@ -121,31 +148,38 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot), PaywallResultHandler 
     ) {
         val d = Dictionary()
 
-        if (error != null) d["error"] = error.message
-        if (userCancelled != null) d["cancelled"] = userCancelled
-        if (info != null) d["active_entitlements"] = info.entitlements.active.size
-
+        if (error != null) {
+            d["error"] = error.message
+        }
+        if (userCancelled != null) {
+            d["cancelled"] = userCancelled
+        }
+        if (info != null) {
+            d["active_entitlements"] = info.entitlements.active.size
+        }
         if (tx != null) {
             d["productId"] = tx.productIds.firstOrNull() ?: ""
-            d["storeTransactionId"] = tx.orderId ?: ""
+            d["transactionId"] = tx.orderId ?: ""
         }
 
-        emitSignal("purchase_result", d)
+        emitOnMain("purchase_result", d)
     }
 
     @UsedByGodot
     fun purchase(product_id: String) {
         val a = act()
         if (a == null) {
-            emitSignal("purchase_result", dictOf("error" to "activity_null"))
+            emitOnMain("purchase_result", dictOf("error" to "activity_null"))
             return
         }
 
         fun doPurchase(product: StoreProduct) {
             val params = PurchaseParams.Builder(a, product).build()
+
             Purchases.sharedInstance.purchase(
                 params,
                 object : PurchaseCallback {
+
                     override fun onError(error: PurchasesError, userCancelled: Boolean) {
                         purchaseEmit(null, null, error, userCancelled)
                     }
@@ -165,13 +199,17 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot), PaywallResultHandler 
                 listOf(product_id),
                 type,
                 object : GetStoreProductsCallback {
+
                     override fun onError(error: PurchasesError) {
-                        emitSignal("purchase_result", dictOf("error" to error.message))
+                        emitOnMain("purchase_result", dictOf("error" to error.message))
                     }
 
                     override fun onReceived(storeProducts: List<StoreProduct>) {
-                        if (storeProducts.isEmpty()) onEmpty()
-                        else doPurchase(storeProducts.first())
+                        if (storeProducts.isEmpty()) {
+                            onEmpty()
+                        } else {
+                            doPurchase(storeProducts.first())
+                        }
                     }
                 }
             )
@@ -179,30 +217,32 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot), PaywallResultHandler 
 
         fetchAndBuy(ProductType.SUBS) {
             fetchAndBuy(ProductType.INAPP) {
-                emitSignal("purchase_result", dictOf("error" to "not_found"))
+                emitOnMain("purchase_result", dictOf("error" to "not_found"))
             }
         }
     }
 
     @UsedByGodot
     fun fetch_offerings() {
-        Purchases.sharedInstance.getOfferings(object : ReceiveOfferingsCallback {
-            override fun onError(error: PurchasesError) {
-                emitSignal("offerings", dictOf("error" to error.message))
-            }
+        Purchases.sharedInstance.getOfferings(
+            object : ReceiveOfferingsCallback {
 
-            override fun onReceived(offerings: Offerings) {
-                val current = offerings.current
+                override fun onError(error: PurchasesError) {
+                    emitOnMain("offerings", dictOf("error" to error.message))
+                }
 
-                emitSignal(
-                    "offerings",
-                    dictOf(
-                        "identifier" to (current?.identifier ?: ""),
-                        "available_packages" to (current?.availablePackages?.size ?: 0)
+                override fun onReceived(offerings: Offerings) {
+                    val current = offerings.current
+                    emitOnMain(
+                        "offerings",
+                        dictOf(
+                            "identifier" to (current?.identifier ?: ""),
+                            "available_packages" to (current?.availablePackages?.size ?: 0)
+                        )
                     )
-                )
+                }
             }
-        })
+        )
     }
 
     @UsedByGodot
@@ -210,9 +250,7 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot), PaywallResultHandler 
         Purchases.sharedInstance.getProductsWith(
             productIds = ids.toList(),
             onError = { error ->
-                val d = Dictionary()
-                d["error"] = error.message
-                emitSignal("products", d)
+                emitOnMain("products", dictOf("error" to error.message))
             },
             onGetStoreProducts = { products ->
                 val arr = mutableListOf<Dictionary>()
@@ -224,58 +262,64 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot), PaywallResultHandler 
                     d["description"] = p.description
                     d["price"] = p.price.formatted
                     d["amount"] = p.price.amountMicros / 1_000_000.0
-
                     arr.add(d)
                 }
 
-                emitSignal("products", arr)
+                emitOnMain("products", arr.toTypedArray())
             }
         )
     }
 
     @UsedByGodot
     fun login(user_id: String) {
-        Purchases.sharedInstance.logIn(user_id, object : LogInCallback {
-            override fun onError(error: PurchasesError) {
-                emitSignal(
-                    "login_finished",
-                    dictOf("success" to false, "error" to error.message)
-                )
-            }
+        Purchases.sharedInstance.logIn(
+            user_id,
+            object : LogInCallback {
 
-            override fun onReceived(customerInfo: CustomerInfo, created: Boolean) {
-                emitSignal(
-                    "login_finished",
-                    dictOf(
-                        "success" to true,
-                        "created" to created,
-                        "active_entitlements" to customerInfo.entitlements.active.size
+                override fun onError(error: PurchasesError) {
+                    emitOnMain(
+                        "login_finished",
+                        dictOf("success" to false, "error" to error.message)
                     )
-                )
+                }
+
+                override fun onReceived(customerInfo: CustomerInfo, created: Boolean) {
+                    emitOnMain(
+                        "login_finished",
+                        dictOf(
+                            "success" to true,
+                            "created" to created,
+                            "active_entitlements" to customerInfo.entitlements.active.size
+                        )
+                    )
+                }
             }
-        })
+        )
     }
 
     @UsedByGodot
     fun logout() {
-        Purchases.sharedInstance.logOut(object : ReceiveCustomerInfoCallback {
-            override fun onError(error: PurchasesError) {
-                emitSignal(
-                    "logout_finished",
-                    dictOf("success" to false, "error" to error.message)
-                )
-            }
+        Purchases.sharedInstance.logOut(
+            object : ReceiveCustomerInfoCallback {
 
-            override fun onReceived(customerInfo: CustomerInfo) {
-                emitSignal(
-                    "logout_finished",
-                    dictOf(
-                        "success" to true,
-                        "active_entitlements" to customerInfo.entitlements.active.size
+                override fun onError(error: PurchasesError) {
+                    emitOnMain(
+                        "logout_finished",
+                        dictOf("success" to false, "error" to error.message)
                     )
-                )
+                }
+
+                override fun onReceived(customerInfo: CustomerInfo) {
+                    emitOnMain(
+                        "logout_finished",
+                        dictOf(
+                            "success" to true,
+                            "active_entitlements" to customerInfo.entitlements.active.size
+                        )
+                    )
+                }
             }
-        })
+        )
     }
 
     @UsedByGodot
@@ -284,11 +328,12 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot), PaywallResultHandler 
             CacheFetchPolicy.CACHED_OR_FETCHED,
             object : ReceiveCustomerInfoCallback {
                 override fun onError(error: PurchasesError) {
-                    emitSignal("subscriber", false)
+                    emitOnMain("subscriber", false)
                 }
 
                 override fun onReceived(customerInfo: CustomerInfo) {
-                    emitSignal("subscriber", customerInfo.entitlements.active.isNotEmpty())
+                    val isSubscriber: Boolean = customerInfo.entitlements.active.isNotEmpty()
+                    emitOnMain("subscriber", isSubscriber)
                 }
             }
         )
@@ -299,17 +344,19 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot), PaywallResultHandler 
         Purchases.sharedInstance.getCustomerInfo(
             CacheFetchPolicy.CACHED_OR_FETCHED,
             object : ReceiveCustomerInfoCallback {
+
                 override fun onError(error: PurchasesError) {
-                    emitSignal("entitlement", entitlement_id, false)
+                    emitOnMain("entitlement", entitlement_id, false)
                 }
 
                 override fun onReceived(customerInfo: CustomerInfo) {
                     val ent = try {
                         customerInfo.entitlements[entitlement_id]
-                    } catch (_: Throwable) {
+                    } catch (e: Throwable) {
                         null
                     }
-                    emitSignal("entitlement", entitlement_id, ent?.isActive == true)
+
+                    emitOnMain("entitlement", entitlement_id, ent?.isActive == true)
                 }
             }
         )
@@ -318,55 +365,25 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot), PaywallResultHandler 
     @UsedByGodot
     fun present_paywall(offering_id: String) {
         val a = act()
+
         if (a == null) {
-            emitSignal("paywall_result", "error", "activity_null")
+            emitOnMain("paywall_result", dictOf("status" to "error", "reason" to "activity_null"))
             return
         }
 
-        val launcher = paywallActivityLauncher
-        if (launcher == null) {
-            emitSignal("paywall_result", "error", "not_available")
-            return
-        }
+        val intent = android.content.Intent(a, RCProxyActivity::class.java)
+        intent.putExtra("offering_id", offering_id)
 
-        Purchases.sharedInstance.getOfferings(object : ReceiveOfferingsCallback {
-            override fun onError(error: PurchasesError) {
-                emitSignal("paywall_result", "error", error.message)
-            }
-
-            override fun onReceived(offerings: Offerings) {
-                val offering =
-                    if (offering_id.isNotEmpty()) offerings.all[offering_id]
-                    else offerings.current
-
-                if (offering == null) {
-                    emitSignal("paywall_result", "error", "offering_not_found")
-                    return
-                }
-
-                a.runOnUiThread {
-                    launcher.launch(
-                        offering = offering,
-                        shouldDisplayDismissButton = true
-                    )
-                }
-            }
-        })
+        a.startActivity(intent)
     }
 
-    override fun onActivityResult(result: PaywallResult) {
-        when (result) {
-            is PaywallResult.Purchased ->
-                emitSignal("paywall_result", "purchased", "")
+    override fun onMainDestroy() {
+        super.onMainDestroy()
 
-            is PaywallResult.Restored ->
-                emitSignal("paywall_result", "restored", "")
-
-            is PaywallResult.Cancelled ->
-                emitSignal("paywall_result", "cancelled", "")
-
-            is PaywallResult.Error ->
-                emitSignal("paywall_result", "error", result.error.message ?: "")
+        val a = act()
+        if (a != null && paywallReceiver != null) {
+            a.unregisterReceiver(paywallReceiver)
+            paywallReceiver = null
         }
     }
 }

@@ -33,5 +33,6 @@ dependencies {
     // RevenueCat
     implementation("com.revenuecat.purchases:purchases:9.13.0")
     implementation("com.revenuecat.purchases:purchases-ui:9.13.0")
+    implementation("androidx.appcompat:appcompat:1.7.1")
 }
 

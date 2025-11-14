@@ -4,7 +4,7 @@
     </a>
 </p>
 
-# Godotx Firebase
+# Godotx RevenueCat
 
 Modular Firebase integration for Godot with support for iOS and Android.
 

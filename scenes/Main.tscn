@@ -28,9 +28,9 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 40.0
-offset_top = 40.0
+offset_top = 160.0
 offset_right = -40.0
-offset_bottom = -40.0
+offset_bottom = -60.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 30
@@ -39,16 +39,8 @@ theme_override_constants/separation = 30
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 52
-text = "GodotxRevenueCat 4.5"
+text = "RevenueCat Plugin Test"
 horizontal_alignment = 1
-
-[node name="Subtitle" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
-theme_override_font_sizes/font_size = 26
-text = "Demo de todas as funções e callbacks do plugin (Android/iOS)"
-horizontal_alignment = 1
-autowrap_mode = 3
 
 [node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
 layout_mode = 2
@@ -79,7 +71,7 @@ text = "Initialize"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_font_sizes/font_size = 22
-text = "Configura o SDK do RevenueCat com API key, usuário e modo debug."
+text = "Configure the RevenueCat SDK with API key, user and debug mode."
 autowrap_mode = 3
 
 [node name="ApiKeyLabel" type="Label" parent="VBoxContainer/ScrollContainer/Content/SectionInitialize/SectionInitializeVBox"]
@@ -101,7 +93,7 @@ caret_blink_interval = 0.5
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 20
-text = "User ID (opcional):"
+text = "User ID (optional):"
 
 [node name="UserIdEdit" type="LineEdit" parent="VBoxContainer/ScrollContainer/Content/SectionInitialize/SectionInitializeVBox"]
 layout_mode = 2
@@ -116,7 +108,7 @@ caret_blink_interval = 0.5
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 20
-text = "Ativar debug"
+text = "Enable debug"
 
 [node name="InitializeButton" type="Button" parent="VBoxContainer/ScrollContainer/Content/SectionInitialize/SectionInitializeVBox"]
 custom_minimum_size = Vector2(0, 70)
@@ -145,7 +137,7 @@ text = "Customer Info"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_font_sizes/font_size = 22
-text = "Chama get_customer_info() e também recebe atualizações."
+text = "Calls get_customer_info() and also receives updates."
 autowrap_mode = 3
 
 [node name="GetCustomerInfoButton" type="Button" parent="VBoxContainer/ScrollContainer/Content/SectionCustomerInfo/SectionCustomerInfoVBox"]
@@ -175,7 +167,7 @@ text = "Purchase"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_font_sizes/font_size = 22
-text = "Realiza purchase(product_id)."
+text = "Performs purchase(product_id)."
 autowrap_mode = 3
 
 [node name="PurchasesProductId" type="LineEdit" parent="VBoxContainer/ScrollContainer/Content/SectionPurchases/SectionPurchasesVBox"]
@@ -214,7 +206,7 @@ text = "Offerings"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_font_sizes/font_size = 22
-text = "Chama fetch_offerings()."
+text = "Calls fetch_offerings()."
 autowrap_mode = 3
 
 [node name="FetchOfferingsButton" type="Button" parent="VBoxContainer/ScrollContainer/Content/SectionOfferings/SectionOfferingsVBox"]
@@ -244,7 +236,7 @@ text = "Products"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_font_sizes/font_size = 22
-text = "fetch_products(ids). Separe IDs por vírgula."
+text = "fetch_products(ids). Separate IDs with comma."
 autowrap_mode = 3
 
 [node name="FetchProductsHBox" type="HBoxContainer" parent="VBoxContainer/ScrollContainer/Content/SectionProducts/SectionProductsVBox"]
@@ -256,6 +248,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 22
+text = "premium-mensal,premium-anual"
 placeholder_text = "product_1, product_2"
 caret_blink = true
 caret_blink_interval = 0.5
@@ -336,7 +329,7 @@ text = "Entitlements"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_font_sizes/font_size = 22
-text = "is_subscriber() e has_entitlement(id)."
+text = "is_subscriber() and has_entitlement(id)."
 autowrap_mode = 3
 
 [node name="IsSubscriberButton" type="Button" parent="VBoxContainer/ScrollContainer/Content/SectionEntitlements/SectionEntitlementsVBox"]
@@ -356,6 +349,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 22
+text = "premium"
 placeholder_text = "entitlement_id"
 caret_blink = true
 caret_blink_interval = 0.5
@@ -398,7 +392,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 22
-placeholder_text = "offering_id (opcional)"
+placeholder_text = "offering_id (optional)"
 caret_blink = true
 caret_blink_interval = 0.5
 
@@ -416,7 +410,7 @@ theme_override_font_sizes/font_size = 32
 text = "Log"
 
 [node name="LogOutput" type="TextEdit" parent="VBoxContainer/ScrollContainer/Content"]
-custom_minimum_size = Vector2(0, 300)
+custom_minimum_size = Vector2(0, 1000)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
