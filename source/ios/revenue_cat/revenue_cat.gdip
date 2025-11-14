@@ -1,0 +1,22 @@
+[config]
+name="GodotxRevenueCat"
+binary="GodotxRevenueCat.xcframework"
+
+initialization="initialize_godotx_revenuecat_module"
+deinitialization="uninitialize_godotx_revenuecat_module"
+
+[dependencies]
+linked=[]
+embedded=[
+    "RevenueCat.xcframework",
+    "RevenueCatUI.xcframework"
+]
+system=["Foundation.framework", "UIKit.framework", "StoreKit.framework"]
+
+capabilities=[]
+
+files=[]
+
+linker_flags=[
+    "-ObjC",
+]
