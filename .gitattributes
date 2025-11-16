@@ -1,0 +1,12 @@
+* text=auto eol=lf
+
+/** export-ignore
+
+/addons !export-ignore
+/addons/** !export-ignore
+
+/ios !export-ignore
+/ios/** !export-ignore
+
+/android/revenue_cat_* !export-ignore
+/android/revenue_cat_*/** !export-ignore

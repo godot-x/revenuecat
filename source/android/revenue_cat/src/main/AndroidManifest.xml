@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <activity
+            android:name="com.godotx.revenuecat.RCProxyActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
+
+        <meta-data
+            android:name="org.godotengine.plugin.v2.GodotxRevenueCat"
+            android:value="com.godotx.revenuecat.RevenueCatPlugin" />
+    </application>
+
+</manifest>
