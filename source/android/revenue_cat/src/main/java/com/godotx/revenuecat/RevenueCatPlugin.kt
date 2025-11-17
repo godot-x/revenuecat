@@ -19,6 +19,7 @@ import com.revenuecat.purchases.interfaces.ReceiveCustomerInfoCallback
 import com.revenuecat.purchases.interfaces.ReceiveOfferingsCallback
 import com.revenuecat.purchases.models.StoreProduct
 import com.revenuecat.purchases.models.StoreTransaction
+import com.revenuecat.purchases.restorePurchasesWith
 import org.godotengine.godot.Dictionary
 import org.godotengine.godot.Godot
 import org.godotengine.godot.plugin.GodotPlugin
@@ -49,7 +50,8 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
             SignalInfo("logout_finished", Dictionary::class.java),
             SignalInfo("subscriber", Boolean::class.javaObjectType),
             SignalInfo("entitlement", String::class.java, Boolean::class.javaObjectType),
-            SignalInfo("paywall_result", Dictionary::class.java)
+            SignalInfo("paywall_result", Dictionary::class.java),
+            SignalInfo("restore_finished", Dictionary::class.java)
         )
     }
 
@@ -219,6 +221,23 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
                 })
             }
         })
+    }
+
+    @UsedByGodot
+    fun restore_purchases() {
+        Purchases.sharedInstance.restorePurchasesWith() { customerInfo ->
+            currentCustomerInfo = customerInfo
+
+            val restoredCount = customerInfo.entitlements.active.size
+
+            emitOnMain(
+                "restore_finished",
+                dictOf(
+                    "active_entitlements" to restoredCount,
+                    "restored" to (restoredCount > 0)
+                )
+            )
+        }
     }
 
     @UsedByGodot

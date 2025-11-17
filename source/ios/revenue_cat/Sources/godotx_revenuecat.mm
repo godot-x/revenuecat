@@ -60,7 +60,8 @@ void GodotxRevenueCat::_bind_methods() {
     ADD_SIGNAL(MethodInfo("subscriber", PropertyInfo(Variant::BOOL, "value")));
     ADD_SIGNAL(MethodInfo("entitlement", PropertyInfo(Variant::STRING, "id"), PropertyInfo(Variant::BOOL, "active")));
     ADD_SIGNAL(MethodInfo("paywall_result", PropertyInfo(Variant::DICTIONARY, "data")));
-    
+    ADD_SIGNAL(MethodInfo("restore_finished", PropertyInfo(Variant::DICTIONARY, "data")));
+
     ClassDB::bind_method(D_METHOD("initialize", "api_key", "user_id", "debug"), &GodotxRevenueCat::initialize);
     ClassDB::bind_method(D_METHOD("get_customer_info"), &GodotxRevenueCat::get_customer_info);
     ClassDB::bind_method(D_METHOD("purchase", "product_id"), &GodotxRevenueCat::purchase);
@@ -72,6 +73,7 @@ void GodotxRevenueCat::_bind_methods() {
     ClassDB::bind_method(D_METHOD("has_entitlement", "entitlement_id"), &GodotxRevenueCat::has_entitlement);
     ClassDB::bind_method(D_METHOD("present_paywall", "offering_id"), &GodotxRevenueCat::present_paywall);
     ClassDB::bind_method(D_METHOD("check_entitlement", "entitlement_id"), &GodotxRevenueCat::check_entitlement);
+    ClassDB::bind_method(D_METHOD("restore_purchases"), &GodotxRevenueCat::restore_purchases);
 }
 
 void GodotxRevenueCat::initialize(String api_key, String user_id, bool debug) {
@@ -260,6 +262,24 @@ bool GodotxRevenueCat::has_entitlement(String entitlement_id) {
     NSString *eid = @(entitlement_id.utf8().get_data());
     RCEntitlementInfo *ent = ((RCCustomerInfo*)currentCustomerInfo).entitlements[eid];
     return ent && ent.isActive;
+}
+
+void GodotxRevenueCat::restore_purchases() {
+    [[RCPurchases sharedPurchases] restorePurchasesWithCompletion:^(RCCustomerInfo *info, NSError *error) {
+        currentCustomerInfo = info;
+
+        int count = info ? (int)info.entitlements.active.count : 0;
+        String err = error ? String(error.localizedDescription.UTF8String) : "";
+        bool success = error == nil;
+
+        dispatch_async(dispatch_get_main_queue(), ^{
+            Dictionary d;
+            d["success"] = success;
+            d["active_entitlements"] = count;
+            if (error) d["error"] = err;
+            emit_signal("restore_finished", d);
+        });
+    }];
 }
 
 static UIViewController *godotx_revenuecat_get_root_view_controller() {

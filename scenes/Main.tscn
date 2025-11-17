@@ -187,6 +187,14 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 28
 text = "Purchase"
 
+[node name="RestorePurchasesButton" type="Button" parent="VBoxContainer/ScrollContainer/Content/SectionPurchases/SectionPurchasesVBox"]
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "Restore Purchases"
+
 [node name="SectionOfferings" type="PanelContainer" parent="VBoxContainer/ScrollContainer/Content"]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_1")
@@ -438,6 +446,7 @@ text = "Clear Log"
 [connection signal="pressed" from="VBoxContainer/ScrollContainer/Content/SectionInitialize/SectionInitializeVBox/InitializeButton" to="." method="_on_initialize_pressed"]
 [connection signal="pressed" from="VBoxContainer/ScrollContainer/Content/SectionCustomerInfo/SectionCustomerInfoVBox/GetCustomerInfoButton" to="." method="_on_get_customer_info_pressed"]
 [connection signal="pressed" from="VBoxContainer/ScrollContainer/Content/SectionPurchases/SectionPurchasesVBox/PurchaseButton" to="." method="_on_purchase_pressed"]
+[connection signal="pressed" from="VBoxContainer/ScrollContainer/Content/SectionPurchases/SectionPurchasesVBox/RestorePurchasesButton" to="." method="_on_restore_purchases_pressed"]
 [connection signal="pressed" from="VBoxContainer/ScrollContainer/Content/SectionOfferings/SectionOfferingsVBox/FetchOfferingsButton" to="." method="_on_fetch_offerings_pressed"]
 [connection signal="pressed" from="VBoxContainer/ScrollContainer/Content/SectionProducts/SectionProductsVBox/FetchProductsHBox/FetchProductsButton" to="." method="_on_fetch_products_pressed"]
 [connection signal="pressed" from="VBoxContainer/ScrollContainer/Content/SectionLogin/SectionLoginVBox/LoginHBox/LoginButton" to="." method="_on_login_pressed"]
