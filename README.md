@@ -116,10 +116,14 @@ revenuecat.fetch_offerings()
 revenuecat.fetch_products(["premium_monthly", "premium_yearly"])
 ```
 
-### Purchase Flow
+### Purchases Flows
 
 ```gdscript
 revenuecat.purchase("premium_monthly")
+```
+
+```gdscript
+revenuecat.restore_purchases()
 ```
 
 ### Show Native Paywall
@@ -183,8 +187,10 @@ revenuecat/
 | `login(user_id)` | Authenticate user |
 | `logout()` | Anonymous reset |
 | `is_subscriber()` | Returns subscription state |
-| `has_entitlement(id)` | Checks entitlement |
+| `has_entitlement(id)` | Returns if has entitlement |
 | `present_paywall(offering)` | Shows native UI |
+| `check_entitlement(id)` | Checks entitlement |
+| `restore_purchases` | Retrieves purchases |
 
 ### Signals
 
@@ -199,6 +205,7 @@ revenuecat/
 | `subscriber` | `value: bool` | Subscription flag |
 | `entitlement` | `id, active` | Entitlement result |
 | `paywall_result` | `data: Dictionary` | Paywall close |
+| `restore_result` | `data: Dictionary` | Restore result |
 
 ## FAQ
 
