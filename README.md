@@ -133,6 +133,7 @@ revenuecat.present_paywall("default")
 ```gdscript
 revenuecat.is_subscriber()
 revenuecat.has_entitlement("premium_access")
+revenuecat.check_entitlement("premium_access")
 ```
 
 ### Login & Logout
