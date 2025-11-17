@@ -188,8 +188,21 @@ func _on_has_entitlement_pressed():
 		log_message("⚠️ Entitlement ID required")
 		return
 
-	revenuecat.has_entitlement(eid)
-	log_message("➡️ has_entitlement(%s)" % eid)
+	var result = revenuecat.has_entitlement(eid)
+	log_message("➡️ has_entitlement(%s) = %s" % [eid, result])
+
+
+func _on_check_entitlement_pressed():
+	if revenuecat == null:
+		return
+
+	var eid = has_entitlement_id_edit.text.strip_edges()
+	if eid.is_empty():
+		log_message("⚠️ Entitlement ID required")
+		return
+
+	revenuecat.check_entitlement(eid)
+	log_message("➡️ check_entitlement(%s)" % eid)
 
 
 func _on_present_paywall_pressed():

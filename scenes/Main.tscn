@@ -175,7 +175,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 22
-text = ""
 placeholder_text = "product_id"
 caret_blink = true
 caret_blink_interval = 0.5
@@ -249,7 +248,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 22
-text = ""
 placeholder_text = "product_1, product_2"
 caret_blink = true
 caret_blink_interval = 0.5
@@ -362,6 +360,13 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 28
 text = "Has Entitlement?"
 
+[node name="CheckEntitlementButton" type="Button" parent="VBoxContainer/ScrollContainer/Content/SectionEntitlements/SectionEntitlementsVBox/HasEntitlementHBox"]
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "Check Entitlement"
+
 [node name="SectionPaywall" type="PanelContainer" parent="VBoxContainer/ScrollContainer/Content"]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_1")
@@ -439,5 +444,6 @@ text = "Clear Log"
 [connection signal="pressed" from="VBoxContainer/ScrollContainer/Content/SectionLogin/SectionLoginVBox/LogoutButton" to="." method="_on_logout_pressed"]
 [connection signal="pressed" from="VBoxContainer/ScrollContainer/Content/SectionEntitlements/SectionEntitlementsVBox/IsSubscriberButton" to="." method="_on_is_subscriber_pressed"]
 [connection signal="pressed" from="VBoxContainer/ScrollContainer/Content/SectionEntitlements/SectionEntitlementsVBox/HasEntitlementHBox/HasEntitlementButton" to="." method="_on_has_entitlement_pressed"]
+[connection signal="pressed" from="VBoxContainer/ScrollContainer/Content/SectionEntitlements/SectionEntitlementsVBox/HasEntitlementHBox/CheckEntitlementButton" to="." method="_on_check_entitlement_pressed"]
 [connection signal="pressed" from="VBoxContainer/ScrollContainer/Content/SectionPaywall/SectionPaywallVBox/PaywallHBox/PaywallButton" to="." method="_on_present_paywall_pressed"]
 [connection signal="pressed" from="VBoxContainer/ScrollContainer/Content/ClearLogButton" to="." method="_on_clear_log_pressed"]

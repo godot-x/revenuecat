@@ -32,6 +32,7 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
     }
 
     private var paywallReceiver: android.content.BroadcastReceiver? = null
+    private var currentCustomerInfo: CustomerInfo? = null
 
     override fun getPluginName(): String {
         return "GodotxRevenueCat"
@@ -136,6 +137,7 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
                 }
 
                 override fun onReceived(customerInfo: CustomerInfo) {
+                    currentCustomerInfo = customerInfo
                     emitOnMain(
                         "customer_info",
                         dictOf("active_entitlements" to customerInfo.entitlements.active.size)
@@ -200,6 +202,7 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
                         storeTransaction: StoreTransaction,
                         customerInfo: CustomerInfo
                     ) {
+                        currentCustomerInfo = customerInfo
                         val d = Dictionary()
 
                         val transactionId = storeTransaction.orderId ?: ""
@@ -280,6 +283,7 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
                 }
 
                 override fun onReceived(customerInfo: CustomerInfo, created: Boolean) {
+                    currentCustomerInfo = customerInfo
                     emitOnMain(
                         "login_finished",
                         dictOf(
@@ -305,6 +309,7 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
                 }
 
                 override fun onReceived(customerInfo: CustomerInfo) {
+                    currentCustomerInfo = customerInfo
                     emitOnMain(
                         "logout_finished",
                         dictOf(
@@ -327,6 +332,7 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
                 }
 
                 override fun onReceived(customerInfo: CustomerInfo) {
+                    currentCustomerInfo = customerInfo
                     val isSubscriber: Boolean = customerInfo.entitlements.active.isNotEmpty()
                     emitOnMain("subscriber", isSubscriber)
                 }
@@ -335,7 +341,7 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
     }
 
     @UsedByGodot
-    fun has_entitlement(entitlement_id: String) {
+    fun check_entitlement(entitlement_id: String) {
         Purchases.sharedInstance.getCustomerInfo(
             CacheFetchPolicy.CACHED_OR_FETCHED,
             object : ReceiveCustomerInfoCallback {
@@ -344,6 +350,8 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
                 }
 
                 override fun onReceived(customerInfo: CustomerInfo) {
+                    currentCustomerInfo = customerInfo
+
                     val ent = try {
                         customerInfo.entitlements[entitlement_id]
                     } catch (e: Throwable) {
@@ -354,6 +362,13 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
                 }
             }
         )
+    }
+
+    @UsedByGodot
+    fun has_entitlement(entitlement_id: String): Boolean {
+        val info = currentCustomerInfo ?: return false
+        val ent = info.entitlements[entitlement_id]
+        return ent?.isActive == true
     }
 
     @UsedByGodot

@@ -12,8 +12,14 @@ GodotxRevenueCat *GodotxRevenueCat::instance = nullptr;
 
 @implementation GodotxRevenueCatDelegate
 
+static GodotxRevenueCatDelegate *s_delegate = nullptr;
+static GodotxRevenueCatPaywallDelegate *pw_delegate = nullptr;
+static RCCustomerInfo *currentCustomerInfo = nullptr;
+
 - (void)purchases:(RCPurchases *)purchases receivedUpdatedCustomerInfo:(RCCustomerInfo *)info {
+    currentCustomerInfo = info;
     int count = info ? (int)info.entitlements.active.count : 0;
+    
     dispatch_async(dispatch_get_main_queue(), ^{
         Dictionary d;
         d["active_entitlements"] = count;
@@ -22,9 +28,6 @@ GodotxRevenueCat *GodotxRevenueCat::instance = nullptr;
 }
 
 @end
-
-static GodotxRevenueCatDelegate *s_delegate = nullptr;
-static GodotxRevenueCatPaywallDelegate *pw_delegate = nullptr;
 
 GodotxRevenueCat *GodotxRevenueCat::get_singleton() {
     return instance;
@@ -35,12 +38,15 @@ GodotxRevenueCat::GodotxRevenueCat() {
         ERR_FAIL_MSG("Instance already exists");
     }
     instance = this;
+    currentCustomerInfo = nullptr;
 }
 
 GodotxRevenueCat::~GodotxRevenueCat() {
     if (instance == this) {
         instance = nullptr;
     }
+    
+    currentCustomerInfo = nullptr;
 }
 
 void GodotxRevenueCat::_bind_methods() {
@@ -65,6 +71,7 @@ void GodotxRevenueCat::_bind_methods() {
     ClassDB::bind_method(D_METHOD("is_subscriber"), &GodotxRevenueCat::is_subscriber);
     ClassDB::bind_method(D_METHOD("has_entitlement", "entitlement_id"), &GodotxRevenueCat::has_entitlement);
     ClassDB::bind_method(D_METHOD("present_paywall", "offering_id"), &GodotxRevenueCat::present_paywall);
+    ClassDB::bind_method(D_METHOD("check_entitlement", "entitlement_id"), &GodotxRevenueCat::check_entitlement);
 }
 
 void GodotxRevenueCat::initialize(String api_key, String user_id, bool debug) {
@@ -84,10 +91,12 @@ void GodotxRevenueCat::initialize(String api_key, String user_id, bool debug) {
     }
     
     [RCPurchases sharedPurchases].delegate = s_delegate;
+    currentCustomerInfo = nullptr;
 }
 
 void GodotxRevenueCat::get_customer_info() {
     [[RCPurchases sharedPurchases] getCustomerInfoWithCompletion:^(RCCustomerInfo *info, NSError *error) {
+        currentCustomerInfo = info;
         int count = info ? (int)info.entitlements.active.count : 0;
         String err = error ? String(error.localizedDescription.UTF8String) : "";
         
@@ -120,6 +129,7 @@ void GodotxRevenueCat::purchase(String pid) {
         RCStoreProduct *p = products.firstObject;
         
         [[RCPurchases sharedPurchases] purchaseProduct:p withCompletion:^(RCStoreTransaction *tx, RCCustomerInfo *info, NSError *error, BOOL cancelled) {
+            currentCustomerInfo = info;
             int count = info ? (int)info.entitlements.active.count : 0;
             String err = error ? String(error.localizedDescription.UTF8String) : "";
             String tid = tx && tx.transactionIdentifier ? String(tx.transactionIdentifier.UTF8String) : "";
@@ -186,6 +196,7 @@ void GodotxRevenueCat::login(String user_id) {
     NSString *uid = @(user_id.utf8().get_data());
     
     [[RCPurchases sharedPurchases] logIn:uid completion:^(RCCustomerInfo *info, BOOL created, NSError *error) {
+        currentCustomerInfo = info;
         int count = info ? (int)info.entitlements.active.count : 0;
         bool success = error == nil;
         String err = error ? String(error.localizedDescription.UTF8String) : "";
@@ -203,6 +214,7 @@ void GodotxRevenueCat::login(String user_id) {
 
 void GodotxRevenueCat::logout() {
     [[RCPurchases sharedPurchases] logOutWithCompletion:^(RCCustomerInfo *info, NSError *error) {
+        currentCustomerInfo = info;
         int count = info ? (int)info.entitlements.active.count : 0;
         bool success = error == nil;
         String err = error ? String(error.localizedDescription.UTF8String) : "";
@@ -218,19 +230,17 @@ void GodotxRevenueCat::logout() {
 }
 
 void GodotxRevenueCat::is_subscriber() {
-    [[RCPurchases sharedPurchases] getCustomerInfoWithCompletion:^(RCCustomerInfo *info, NSError *error) {
-        bool active = info && info.entitlements.active.count > 0;
-        
-        dispatch_async(dispatch_get_main_queue(), ^{
-            emit_signal("subscriber", active);
-        });
-    }];
+    bool active = currentCustomerInfo && ((RCCustomerInfo *)currentCustomerInfo).entitlements.active.count > 0;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        emit_signal("subscriber", active);
+    });
 }
 
-void GodotxRevenueCat::has_entitlement(String entitlement_id) {
+void GodotxRevenueCat::check_entitlement(String entitlement_id) {
     NSString *eid = @(entitlement_id.utf8().get_data());
     
     [[RCPurchases sharedPurchases] getCustomerInfoWithCompletion:^(RCCustomerInfo *info, NSError *error) {
+        currentCustomerInfo = info;
         bool active = false;
         
         if (info) {
@@ -242,6 +252,14 @@ void GodotxRevenueCat::has_entitlement(String entitlement_id) {
             emit_signal("entitlement", entitlement_id, active);
         });
     }];
+}
+
+bool GodotxRevenueCat::has_entitlement(String entitlement_id) {
+    if (!currentCustomerInfo) return false;
+    
+    NSString *eid = @(entitlement_id.utf8().get_data());
+    RCEntitlementInfo *ent = ((RCCustomerInfo*)currentCustomerInfo).entitlements[eid];
+    return ent && ent.isActive;
 }
 
 static UIViewController *godotx_revenuecat_get_root_view_controller() {

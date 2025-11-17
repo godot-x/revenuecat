@@ -22,8 +22,9 @@ public:
     void login(String user_id);
     void logout();
     void is_subscriber();
-    void has_entitlement(String entitlement_id);
+    void check_entitlement(String entitlement_id);
     void present_paywall(String offering_id);
+    bool has_entitlement(String entitlement_id);
     
     GodotxRevenueCat();
     ~GodotxRevenueCat();
