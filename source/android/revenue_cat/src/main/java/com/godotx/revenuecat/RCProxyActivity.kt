@@ -61,7 +61,7 @@ class RCProxyActivity : ComponentActivity(), PaywallResultHandler {
             is PaywallResult.Purchased -> emitBroadcast("purchased")
             is PaywallResult.Restored -> emitBroadcast("restored")
             is PaywallResult.Cancelled -> emitBroadcast("cancelled")
-            is PaywallResult.Error -> emitBroadcast("error", result.error.message ?: "")
+            is PaywallResult.Error -> emitBroadcast("error", result.error.message)
         }
         finish()
     }
