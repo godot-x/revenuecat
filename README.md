@@ -43,7 +43,7 @@ This project provides a native RevenueCat plugin for Godot, built as a fully int
 | Godot | 4.5‑stable |
 | RevenueCat iOS SDK | 5.54.0 |
 | RevenueCat Android SDK | 9.19.0 |
-| Kotlin | 2.1.0 |
+| Kotlin | 2.3.0 |
 | Min iOS | 15.0 |
 | Min Android SDK | 24 (Android 7.0) |
 
