@@ -41,8 +41,8 @@ This project provides a native RevenueCat plugin for Godot, built as a fully int
 | Component | Version |
 |-----------|---------|
 | Godot | 4.5‑stable |
-| RevenueCat iOS SDK | 5.48.0 |
-| RevenueCat Android SDK | 9.14.0 |
+| RevenueCat iOS SDK | 5.54.0 |
+| RevenueCat Android SDK | 9.19.0 |
 | Kotlin | 2.1.0 |
 | Min iOS | 15.0 |
 | Min Android SDK | 24 (Android 7.0) |
@@ -51,18 +51,40 @@ This project provides a native RevenueCat plugin for Godot, built as a fully int
 
 ### 1. Installation
 
-Copy the plugin folder into your Godot project:
+#### Option A: Godot Asset Library (Recommended)
 
-```
-your_project/
-└── addons/
-    └── godotx_revenue_cat/
-```
+1. Open **AssetLib** in Godot Editor
+2. Search for "Godotx RevenueCat"
+3. Click **Download** and **Install**
+4. Or download directly from: https://godotengine.org/asset-library/asset/4493
 
-Enable it in the editor:
+#### Option B: Manual Installation
 
-- Go to **Project → Project Settings → Plugins**
-- Enable **Godotx RevenueCat**
+1. **Download the ZIP** from [Releases](https://github.com/godot-x/revenuecat/releases)
+
+2. **Extract the ZIP** - it contains 3 folders:
+   ```
+   godotx_revenuecat/
+   ├── addons/
+   ├── ios/
+   └── android/
+   ```
+
+3. **Copy all 3 folders** to your Godot project root:
+   ```
+   your_project/
+   ├── addons/
+   │   └── godotx_revenue_cat/
+   ├── ios/
+   │   └── plugins/
+   │       └── revenuecat/
+   └── android/
+       └── revenuecat/
+   ```
+
+4. **Enable the plugin** in Godot:
+   - Open **Project → Project Settings → Plugins**
+   - Enable "Godotx RevenueCat"
 
 ### 2. Configure Export Preset
 
@@ -146,6 +168,41 @@ revenuecat.check_entitlement("premium_access")
 revenuecat.login("user_123")
 revenuecat.logout()
 ```
+
+## Advanced Configuration
+
+### Android R8/ProGuard Minification
+
+By default, R8 minification is **disabled** in release builds. If you want to enable it for smaller APK/AAB sizes, follow these steps:
+
+1. **Edit `android/build/build.gradle`** and enable minification in the release build type:
+
+   ```gradle
+   android {
+       buildTypes {
+           release {
+               minifyEnabled true
+               shrinkResources true
+               proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+           }
+       }
+   }
+   ```
+
+2. **Create `android/build/proguard-rules.pro`** with the following content:
+
+   ```proguard
+   ####################################
+   # Godot JNI
+   ####################################
+   -keep class org.godotengine.godot.** { *; }
+   -dontwarn org.godotengine.godot.**
+   ```
+
+**Important Notes:**
+- RevenueCat ProGuard rules are already included in the module (via `consumerProguardFiles`)
+- Only add custom rules if you encounter issues with other libraries
+- Test thoroughly after enabling minification to ensure everything works correctly
 
 ## Building (For Developers)
 

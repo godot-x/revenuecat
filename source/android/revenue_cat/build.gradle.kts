@@ -5,10 +5,11 @@ plugins {
 
 android {
     namespace = "com.godotx.revenuecat"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 21
+        consumerProguardFiles("consumer-rules.pro")
     }
 
     buildTypes {
@@ -31,8 +32,8 @@ dependencies {
     compileOnly("org.godotengine:godot:4.2.2.stable")
     
     // RevenueCat
-    implementation("com.revenuecat.purchases:purchases:9.14.0")
-    implementation("com.revenuecat.purchases:purchases-ui:9.14.0")
+    implementation("com.revenuecat.purchases:purchases:9.19.0")
+    implementation("com.revenuecat.purchases:purchases-ui:9.19.0")
     implementation("androidx.appcompat:appcompat:1.7.1")
 }
 
