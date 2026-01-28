@@ -54,7 +54,7 @@ void GodotxRevenueCat::_bind_methods() {
     ADD_SIGNAL(MethodInfo("customer_info", PropertyInfo(Variant::DICTIONARY, "data")));
     ADD_SIGNAL(MethodInfo("purchase_result", PropertyInfo(Variant::DICTIONARY, "data")));
     ADD_SIGNAL(MethodInfo("offerings", PropertyInfo(Variant::DICTIONARY, "data")));
-    ADD_SIGNAL(MethodInfo("products", PropertyInfo(Variant::ARRAY, "items")));
+    ADD_SIGNAL(MethodInfo("products", PropertyInfo(Variant::DICTIONARY, "data")));
     ADD_SIGNAL(MethodInfo("login_finished", PropertyInfo(Variant::DICTIONARY, "data")));
     ADD_SIGNAL(MethodInfo("logout_finished", PropertyInfo(Variant::DICTIONARY, "data")));
     ADD_SIGNAL(MethodInfo("subscriber", PropertyInfo(Variant::BOOL, "value")));
@@ -189,7 +189,11 @@ void GodotxRevenueCat::fetch_products(Array ids) {
                 o["amount"] = (double)p.price.doubleValue;
                 arr.append(o);
             }
-            emit_signal("products", arr);
+            
+            Dictionary result;
+            result["products"] = arr;
+            result["error"] = "";
+            emit_signal("products", result);
         });
     }];
 }

@@ -45,7 +45,7 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
             SignalInfo("customer_info", Dictionary::class.java),
             SignalInfo("purchase_result", Dictionary::class.java),
             SignalInfo("offerings", Dictionary::class.java),
-            SignalInfo("products", Array<Dictionary>::class.java),
+            SignalInfo("products", Dictionary::class.java),
             SignalInfo("login_finished", Dictionary::class.java),
             SignalInfo("logout_finished", Dictionary::class.java),
             SignalInfo("subscriber", Boolean::class.javaObjectType),
@@ -244,7 +244,6 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
     fun fetch_offerings() {
         Purchases.sharedInstance.getOfferings(
             object : ReceiveOfferingsCallback {
-
                 override fun onError(error: PurchasesError) {
                     emitOnMain("offerings", dictOf("error" to error.message))
                 }
@@ -268,22 +267,26 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
         Purchases.sharedInstance.getProductsWith(
             productIds = ids.toList(),
             onError = { error ->
-                emitOnMain("products", dictOf("error" to error.message))
+                val result = Dictionary()
+                result["products"] = arrayOf<Any>()
+                result["error"] = error.message
+                emitOnMain("products", result)
             },
             onGetStoreProducts = { products ->
-                val arr = mutableListOf<Dictionary>()
-
-                for (p in products) {
+                val arr = products.map { p ->
                     val d = Dictionary()
                     d["id"] = p.id
                     d["title"] = p.title
                     d["description"] = p.description
                     d["price"] = p.price.formatted
                     d["amount"] = p.price.amountMicros / 1_000_000.0
-                    arr.add(d)
-                }
+                    d
+                }.toTypedArray()
 
-                emitOnMain("products", arr.toTypedArray())
+                val result = Dictionary()
+                result["products"] = arr
+                result["error"] = ""
+                emitOnMain("products", result)
             }
         )
     }

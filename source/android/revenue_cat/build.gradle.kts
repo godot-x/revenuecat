@@ -34,8 +34,8 @@ dependencies {
     compileOnly("org.godotengine:godot:4.5.1.stable")
 
     // RevenueCat
-    implementation("com.revenuecat.purchases:purchases:9.19.0")
-    implementation("com.revenuecat.purchases:purchases-ui:9.19.0")
+    implementation("com.revenuecat.purchases:purchases:9.19.4")
+    implementation("com.revenuecat.purchases:purchases-ui:9.19.4")
     implementation("androidx.appcompat:appcompat:1.7.1")
 }
 

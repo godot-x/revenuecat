@@ -259,7 +259,10 @@ func _on_offerings_received(data):
 
 func _on_products_received(data):
 	log_message("🔔 SIGNAL: products")
-	log_message(array_to_string(data))
+	if data.has("error") and not data["error"].is_empty():
+		log_message("   ❌ Error: %s" % data["error"])
+	if data.has("products"):
+		log_message(array_to_string(data["products"]))
 
 
 func _on_login_finished(data):
