@@ -262,7 +262,7 @@ revenuecat/
 | `subscriber` | `value: bool` | Subscription flag |
 | `entitlement` | `id, active` | Entitlement result |
 | `paywall_result` | `data: Dictionary` | Paywall close |
-| `restore_result` | `data: Dictionary` | Restore result |
+| `restore_finished` | `data: Dictionary` | Restore result |
 
 ## FAQ
 

@@ -84,7 +84,7 @@ func connect_signals() -> void:
 	revenuecat.subscriber.connect(_on_subscriber_result)
 	revenuecat.entitlement.connect(_on_entitlement_result)
 	revenuecat.paywall_result.connect(_on_paywall_result)
-	revenuecat.restore_result.connect(_on_restore_result)
+	revenuecat.restore_finished.connect(_on_restore_finished)
 
 	log_message("🔌 Connected all RevenueCat signals")
 
@@ -287,6 +287,6 @@ func _on_paywall_result(data):
 	log_message(dict_to_string(data))
 
 
-func _on_restore_result(data):
-	log_message("🔔 SIGNAL: restore_result")
+func _on_restore_finished(data):
+	log_message("🔔 SIGNAL: restore_finished")
 	log_message(dict_to_string(data))
