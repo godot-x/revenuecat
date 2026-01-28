@@ -2,8 +2,8 @@ platform :ios, '15.0'
 use_frameworks!
 
 target 'GodotxRevenueCat' do
- pod 'RevenueCat', '5.54.0'
- pod 'RevenueCatUI', '5.54.0'
+ pod 'RevenueCat', '5.56.0'
+ pod 'RevenueCatUI', '5.56.0'
 end
 
 post_install do |installer|

@@ -41,8 +41,8 @@ This project provides a native RevenueCat plugin for Godot, built as a fully int
 | Component | Version |
 |-----------|---------|
 | Godot | 4.5‑stable |
-| RevenueCat iOS SDK | 5.54.0 |
-| RevenueCat Android SDK | 9.19.0 |
+| RevenueCat iOS SDK | 5.56.0 |
+| RevenueCat Android SDK | 9.19.4 |
 | Kotlin | 2.3.0 |
 | Min iOS | 15.0 |
 | Min Android SDK | 24 (Android 7.0) |
@@ -136,6 +136,17 @@ revenuecat.fetch_offerings()
 
 # Products (for custom UI)
 revenuecat.fetch_products(["premium_monthly", "premium_yearly"])
+revenuecat.products.connect(_on_products_received)
+
+func _on_products_received(data):
+    if data["error"].is_empty():
+        var products = data["products"]
+        for product in products:
+            print("ID: ", product["id"])
+            print("Title: ", product["title"])
+            print("Price: ", product["price"])
+    else:
+        print("Error: ", data["error"])
 ```
 
 ### Purchases Flows
@@ -256,7 +267,7 @@ revenuecat/
 | `customer_info_changed` | `data: Dictionary` | On customer update |
 | `purchase_result` | `data: Dictionary` | On purchase finish |
 | `offerings` | `data: Dictionary` | Offerings received |
-| `products` | `items: Array` | Products received |
+| `products` | `data: Dictionary` | Products received |
 | `login_finished` | `data: Dictionary` | Login status |
 | `logout_finished` | `data: Dictionary` | Logout |
 | `subscriber` | `value: bool` | Subscription flag |
