@@ -32,8 +32,10 @@ targets:
         HEADER_SEARCH_PATHS:
           - "$(inherited)"
           - "$(PODS_ROOT)/**"
-          - "$(SRCROOT)/../../../../godot"
-          - "$(SRCROOT)/../../../../godot/platform/ios"
+          - "$(SRCROOT)/../../../../godot-cpp/include"
+          - "$(SRCROOT)/../../../../godot-cpp/gen/include"
+          - "$(SRCROOT)/../../../../godot-cpp/gdextension"
+
         LIBRARY_SEARCH_PATHS:
           - "$(inherited)"
           - "$(SDKROOT)/usr/lib/swift"
@@ -44,17 +46,12 @@ targets:
           GCC_PREPROCESSOR_DEFINITIONS:
             - "$(inherited)"
             - DEBUG=1
-            - PTRCALL_ENABLED=1
-            - TYPED_METHOD_BIND=1
             - DEBUG_ENABLED=1
             - DEBUG_MEMORY_ALLOC=1
             - DISABLE_FORCED_INLINE=1
             - DISABLE_DEPRECATED=1
-            - DEBUG_METHODS_ENABLED=1
           OTHER_CFLAGS:
             - "$(inherited)"
-            - "-fcxx-modules"
-            - "-fmodules"
             - "-g"
           OTHER_CPLUSPLUSFLAGS:
             - "$(inherited)"
@@ -65,15 +62,9 @@ targets:
           CONFIGURATION_BUILD_DIR: "$(SRCROOT)/bin/release-$(PLATFORM_NAME)-$(ARCHS)"
           GCC_PREPROCESSOR_DEFINITIONS:
             - "$(inherited)"
-            - PTRCALL_ENABLED=1
-            - TYPED_METHOD_BIND=1
           OTHER_CFLAGS:
             - "$(inherited)"
-            - "-fcxx-modules"
-            - "-fmodules"
-            - "-g"
           OTHER_CPLUSPLUSFLAGS:
             - "$(inherited)"
             - "-fcxx-modules"
             - "-fmodules"
-            - "-g"

@@ -1,4 +1,18 @@
-.PHONY: help clean clean-godot setup-godot build-godot-headers setup-apple build-apple build-android build-all package setup-sdk unsign-sdk
+.PHONY: help clean clean-godot \
+setup-godot build-godot setup-apple \
+build-apple build-android build-all \
+package \
+setup-sdk unsign-sdk
+
+# ============================================================================
+# Plugin Configuration
+# ============================================================================
+PLUGIN_NAME       = godotx_revenue_cat
+
+APPLE_PLUGIN      = revenue_cat
+APPLE_PLUGIN_NAME = RevenueCat
+
+ANDROID_PLUGIN    = revenue_cat
 
 # ============================================================================
 # Directory Configuration (based on ROOT_DIR)
@@ -6,30 +20,25 @@
 ROOT_DIR := $(shell pwd)
 
 # Source directories
-GODOT_DIR         = $(ROOT_DIR)/godot
-SOURCE_DIR        = $(ROOT_DIR)/source
-IOS_SOURCE_DIR    = $(SOURCE_DIR)/ios/revenue_cat
-ANDROID_SOURCE_DIR= $(SOURCE_DIR)/android/revenue_cat
-ADDONS_DIR        = $(ROOT_DIR)/addons/godotx_revenuecat
+GODOT_CPP_DIR      = $(ROOT_DIR)/godot-cpp
+SOURCE_DIR         = $(ROOT_DIR)/source
+IOS_SOURCE_DIR     = $(SOURCE_DIR)/ios/revenue_cat
+ANDROID_SOURCE_DIR = $(SOURCE_DIR)/android/revenue_cat
+ADDONS_SOURCE_DIR  = $(SOURCE_DIR)/addons
+BUILD_ROOT_DIR     = $(ROOT_DIR)/build
+PACKAGE_DIR        = $(ROOT_DIR)/package
+DEMO_DIR           = $(ROOT_DIR)/demo
 
 # Output directories
-IOS_PLUGINS_DIR   = $(ROOT_DIR)/ios/plugins
-ANDROID_OUTPUT_DIR= $(ROOT_DIR)/android
+IOS_OUTPUT_DIR     = $(BUILD_ROOT_DIR)/ios
+ANDROID_OUTPUT_DIR = $(BUILD_ROOT_DIR)/android
 
 # Binary directories
-REVENUECAT_SDK_DIR = $(ROOT_DIR)/source/ios/revenue_cat_sdk
+REVENUECAT_SDK_DIR    = $(ROOT_DIR)/source/ios/revenue_cat_sdk
 REVENUECAT_UI_SDK_DIR = $(ROOT_DIR)/source/ios/revenue_cat_ui_sdk
 
 # Temporary directories
 TMP_DIR = /tmp
-
-# ============================================================================
-# Module Configuration
-# ============================================================================
-APPLE_MODULE      = revenue_cat
-APPLE_MODULE_NAME = RevenueCat
-
-ANDROID_MODULE    = revenue_cat
 
 # ============================================================================
 # Build Configuration
@@ -40,8 +49,9 @@ APPLE_SDK_ARCHS  = iphoneos/arm64 iphonesimulator/arm64 iphonesimulator/x86_64
 # ============================================================================
 # Version Configuration
 # ============================================================================
-GODOT_VERSION = 4.5-stable
-GODOT_REPO    = https://github.com/godotengine/godot.git
+GODOT_CPP_VERSION = godot-4.5-stable
+GODOT_CPP_REPO    = https://github.com/godotengine/godot-cpp.git
+
 REVENUECAT_VERSION = 5.56.0
 
 # ============================================================================
@@ -53,17 +63,18 @@ help:
 	@echo "================================"
 	@echo ""
 	@echo "Available targets:"
-	@echo "  setup-godot         - Clone/update Godot source (required for compilation)"
-	@echo "  build-godot-headers - Generate Godot headers (required for iOS plugin compilation)"
-	@echo "  setup-sdk           - Download RevenueCat SDK"
-	@echo "  unsign-sdk          - Remove signatures from RevenueCat SDK frameworks"
-	@echo "  setup-apple         - Install Apple dependencies (CocoaPods + XcodeGen) for RevenueCat"
-	@echo "  build-apple         - Build iOS RevenueCat plugin (GodotxRevenueCat xcframework + .gdip)"
-	@echo "  build-android       - Build Android RevenueCat plugin (.aar)"
-	@echo "  build-all           - Build everything (Apple + Android)"
-	@echo "  package             - Create distribution package (godotx_revenuecat.zip)"
-	@echo "  clean               - Clean build artifacts"
-	@echo "  clean-godot         - Remove Godot source"
+	@echo "  setup-godot      - Clone/update Godot source (required for compilation)"
+	@echo "  build-godot      - Generate Godot headers (required for iOS plugin compilation)"
+	@echo "  setup-sdk        - Download RevenueCat SDK"
+	@echo "  unsign-sdk       - Remove signatures from RevenueCat SDK frameworks"
+	@echo "  setup-apple      - Install Apple dependencies (CocoaPods + XcodeGen) for RevenueCat"
+	@echo "  build-apple      - Build iOS RevenueCat plugin (GodotxRevenueCat xcframework + .gdip)"
+	@echo "  build-android    - Build Android RevenueCat plugin (.aar)"
+	@echo "  build-all        - Build everything (Apple + Android)"
+	@echo "  package          - Create distribution package (godotx_revenuecat.zip)"
+	@echo "  demo-setup       - Setup demo project"
+	@echo "  clean            - Clean build artifacts"
+	@echo "  clean-godot      - Remove Godot source"
 
 # ============================================================================
 # Godot Setup Targets
@@ -71,36 +82,33 @@ help:
 
 setup-godot:
 	@echo "====================================================================="
-	@echo "Setting up Godot source code..."
+	@echo "Setting up godot-cpp..."
 	@echo "====================================================================="
 	@echo ""
-	@if [ -d "$(GODOT_DIR)" ]; then \
-		echo "→ Godot directory already exists"; \
-		cd $(GODOT_DIR) && \
+	@if [ -d "$(GODOT_CPP_DIR)" ]; then \
+		echo "→ Godot CPP source already exists"; \
+		cd $(GODOT_CPP_DIR) && \
 		echo "  • Fetching latest changes..." && \
 		git fetch origin && \
-		echo "  • Checking out $(GODOT_VERSION)..." && \
-		git checkout $(GODOT_VERSION) && \
-		git pull origin $(GODOT_VERSION) && \
-		cd ..; \
-		echo "  ✓ Godot updated to $(GODOT_VERSION)"; \
+		echo "  • Checking out $(GODOT_CPP_VERSION)..." && \
+		git checkout $(GODOT_CPP_VERSION) && \
+		git pull origin $(GODOT_CPP_VERSION); \
 	else \
-		echo "→ Cloning Godot repository..."; \
-		git clone --depth 1 --branch $(GODOT_VERSION) $(GODOT_REPO) $(GODOT_DIR) && \
-		echo "  ✓ Godot $(GODOT_VERSION) cloned successfully"; \
+		echo "→ Cloning Godot CPP source repository..."; \
+		git clone --depth 1 --branch $(GODOT_CPP_VERSION) $(GODOT_CPP_REPO) $(GODOT_CPP_DIR); \
 	fi
 	@echo ""
 	@echo "====================================================================="
-	@echo "✓ Godot source ready!"
+	@echo "✓ Godot CPP source ready"
 	@echo "====================================================================="
 
-build-godot-headers: setup-godot
+build-godot: setup-godot
 	@echo "====================================================================="
 	@echo "Building Godot headers..."
 	@echo "====================================================================="
 	@echo ""
 	@echo "→ Generating iOS headers with scons..."
-	@cd $(GODOT_DIR) && scons platform=ios target=template_release
+	@cd $(GODOT_CPP_DIR) && scons platform=ios target=template_release
 	@echo ""
 	@echo "====================================================================="
 	@echo "✓ Godot headers generated!"
@@ -108,7 +116,7 @@ build-godot-headers: setup-godot
 
 setup-sdk:
 	@echo "====================================================================="
-	@echo "Setting up RevenueCat SDK..."
+	@echo "Setting up External SDKs..."
 	@echo "====================================================================="
 	@echo ""
 	@if [ ! -d "$(REVENUECAT_SDK_DIR)" ]; then \
@@ -146,12 +154,12 @@ setup-sdk:
 
 	@echo ""
 	@echo "====================================================================="
-	@echo "✓ RevenueCat SDK + UI ready!"
+	@echo "✓ External SDKs ready!"
 	@echo "====================================================================="
 
 unsign-sdk:
 	@echo "====================================================================="
-	@echo "Removing signatures from RevenueCat SDK frameworks..."
+	@echo "Removing signatures from frameworks..."
 	@echo "====================================================================="
 	@echo ""
 	# remove pastas de assinatura dos bundles
@@ -160,19 +168,19 @@ unsign-sdk:
 	@echo "  ✓ All _CodeSignature folders removed"
 	@echo ""
 	@echo "====================================================================="
-	@echo "✓ RevenueCat frameworks are now UNSIGNED (build-safe)"
+	@echo "✓ Frameworks are now UNSIGNED (build-safe)"
 	@echo "====================================================================="
 
 # ============================================================================
-# Apple (iOS) RevenueCat Targets
+# Apple Targets
 # ============================================================================
 
 setup-apple: setup-godot
 	@echo "====================================================================="
-	@echo "Setting up Apple (iOS) dependencies for RevenueCat..."
+	@echo "Setting up Apple dependencies..."
 	@echo "====================================================================="
 	@echo ""
-	@echo "→ Setting up $(APPLE_MODULE) (Godotx$(APPLE_MODULE_NAME))..."
+	@echo "→ Setting up $(APPLE_PLUGIN) (Godotx$(APPLE_PLUGIN_NAME))..."
 	@(cd $(IOS_SOURCE_DIR) && \
 		echo "  • Creating build directory..." && \
 		rm -rf build && mkdir -p build && \
@@ -184,32 +192,32 @@ setup-apple: setup-godot
 		pod install --repo-update --project-directory=build)
 	@echo ""
 	@echo "====================================================================="
-	@echo "✓ Apple RevenueCat module setup complete!"
+	@echo "✓ Apple setup complete!"
 	@echo "====================================================================="
 
 build-apple: setup-apple
 	@echo "====================================================================="
-	@echo "Building Apple (iOS) RevenueCat module..."
+	@echo "Building Apple (iOS) plugin..."
 	@echo "====================================================================="
 	@echo ""
-	@echo "→ Building $(APPLE_MODULE) (Godotx$(APPLE_MODULE_NAME))..."
+	@echo "→ Building $(APPLE_PLUGIN) (Godotx$(APPLE_PLUGIN_NAME))..."
 	@(cd $(IOS_SOURCE_DIR) && \
-		rm -rf $(IOS_PLUGINS_DIR)/$(APPLE_MODULE) && \
-		mkdir -p $(IOS_PLUGINS_DIR)/$(APPLE_MODULE) && \
+		rm -rf $(IOS_OUTPUT_DIR)/$(APPLE_PLUGIN) && \
+		mkdir -p $(IOS_OUTPUT_DIR)/$(APPLE_PLUGIN) && \
 		for config in $(BUILD_CONFIGS); do \
 			config_lower=$$(echo $$config | tr '[:upper:]' '[:lower:]'); \
 			echo "  • Building $$config configuration..."; \
 			echo "    - Cleaning $$config..." && \
-			xcodebuild clean -workspace build/Godotx$(APPLE_MODULE_NAME).xcworkspace \
-				-scheme Godotx$(APPLE_MODULE_NAME) \
+			xcodebuild clean -workspace build/Godotx$(APPLE_PLUGIN_NAME).xcworkspace \
+				-scheme Godotx$(APPLE_PLUGIN_NAME) \
 				-configuration $$config && \
 			for sdk_arch in $(APPLE_SDK_ARCHS); do \
 				sdk=$$(echo $$sdk_arch | cut -d/ -f1); \
 				arch=$$(echo $$sdk_arch | cut -d/ -f2); \
 				echo "    - Building $$config for $$sdk ($$arch)..." && \
 				xcodebuild \
-					-workspace build/Godotx$(APPLE_MODULE_NAME).xcworkspace \
-					-scheme Godotx$(APPLE_MODULE_NAME) \
+					-workspace build/Godotx$(APPLE_PLUGIN_NAME).xcworkspace \
+					-scheme Godotx$(APPLE_PLUGIN_NAME) \
 					-sdk $$sdk \
 					-arch $$arch \
 					-configuration $$config \
@@ -221,65 +229,63 @@ build-apple: setup-apple
 			echo "    - Creating universal simulator library..." && \
 			mkdir -p build/bin/$$config_lower-simulator && \
 			lipo -create \
-				build/bin/$$config_lower-iphonesimulator-arm64/libGodotx$(APPLE_MODULE_NAME).a \
-				build/bin/$$config_lower-iphonesimulator-x86_64/libGodotx$(APPLE_MODULE_NAME).a \
-				-output build/bin/$$config_lower-simulator/libGodotx$(APPLE_MODULE_NAME).a && \
+				build/bin/$$config_lower-iphonesimulator-arm64/libGodotx$(APPLE_PLUGIN_NAME).a \
+				build/bin/$$config_lower-iphonesimulator-x86_64/libGodotx$(APPLE_PLUGIN_NAME).a \
+				-output build/bin/$$config_lower-simulator/libGodotx$(APPLE_PLUGIN_NAME).a && \
 			cp -r build/bin/$$config_lower-iphonesimulator-arm64/include build/bin/$$config_lower-simulator && \
 			echo "    - Creating $$config XCFramework..." && \
 			xcodebuild -create-xcframework \
-				-library build/bin/$$config_lower-iphoneos-arm64/libGodotx$(APPLE_MODULE_NAME).a \
+				-library build/bin/$$config_lower-iphoneos-arm64/libGodotx$(APPLE_PLUGIN_NAME).a \
 				-headers build/bin/$$config_lower-iphoneos-arm64/include \
-				-library build/bin/$$config_lower-simulator/libGodotx$(APPLE_MODULE_NAME).a \
+				-library build/bin/$$config_lower-simulator/libGodotx$(APPLE_PLUGIN_NAME).a \
 				-headers build/bin/$$config_lower-simulator/include \
-				-output $(IOS_PLUGINS_DIR)/$(APPLE_MODULE)/Godotx$(APPLE_MODULE_NAME).$$config_lower.xcframework && \
+				-output $(IOS_OUTPUT_DIR)/$(APPLE_PLUGIN)/Godotx$(APPLE_PLUGIN_NAME).$$config_lower.xcframework && \
 			echo "    ✓ $$config build complete"; \
 		done && \
 		echo "    - Cleaning temporary build artifacts..." && \
 		rm -rf bin && \
 		rm -rf build && \
-		echo "  • Copying .gdip file to output..." && \
-		cp revenue_cat.gdip $(IOS_PLUGINS_DIR)/$(APPLE_MODULE)/ && \
 		echo "  • Copying RevenueCat SDK frameworks..." && \
-		cp -a $(REVENUECAT_SDK_DIR)/*.xcframework $(IOS_PLUGINS_DIR)/$(APPLE_MODULE)/ && \
-		cp -a $(REVENUECAT_UI_SDK_DIR)/*.xcframework $(IOS_PLUGINS_DIR)/$(APPLE_MODULE)/ && \
-		echo "  ✓ RevenueCat module build complete (Debug + Release)" \
+		cp -a $(REVENUECAT_SDK_DIR)/*.xcframework $(IOS_OUTPUT_DIR)/$(APPLE_PLUGIN)/ && \
+		cp -a $(REVENUECAT_UI_SDK_DIR)/*.xcframework $(IOS_OUTPUT_DIR)/$(APPLE_PLUGIN)/ && \
+		echo "  ✓ RevenueCat plugin build complete (Debug + Release)" \
 	)
 	@echo ""
 	@echo "====================================================================="
-	@echo "✓ Apple RevenueCat module built successfully!"
+	@echo "✓ Apple plugin built successfully!"
 	@echo "====================================================================="
 
 
 # ============================================================================
-# Android RevenueCat Targets
+# Android Targets
 # ============================================================================
 
 build-android:
 	@echo "====================================================================="
-	@echo "Building Android RevenueCat module..."
+	@echo "Building android plugin..."
 	@echo "====================================================================="
 	@echo ""
-	@echo "→ Building $(ANDROID_MODULE)..."
+	@echo "→ Building $(ANDROID_PLUGIN)..."
 	@(cd $(ANDROID_SOURCE_DIR) && \
 		echo "  • Running Gradle assembleDebug..." && \
 		./gradlew assembleDebug && \
 		echo "  • Running Gradle assembleRelease..." && \
 		./gradlew assembleRelease)
 	@echo "  • Creating output directory..."
-	@rm -rf $(ANDROID_OUTPUT_DIR)/$(ANDROID_MODULE)
-	@mkdir -p $(ANDROID_OUTPUT_DIR)/$(ANDROID_MODULE)
+	@rm -rf $(ANDROID_OUTPUT_DIR)/$(ANDROID_PLUGIN)
+	@mkdir -p $(ANDROID_OUTPUT_DIR)/$(ANDROID_PLUGIN)
 	@echo "  • Copying Debug AAR..."
-	@cp $(ANDROID_SOURCE_DIR)/build/outputs/aar/*-debug.aar $(ANDROID_OUTPUT_DIR)/$(ANDROID_MODULE)/$(ANDROID_MODULE).debug.aar   2>/dev/null || true
+	@cp $(ANDROID_SOURCE_DIR)/build/outputs/aar/*-debug.aar $(ANDROID_OUTPUT_DIR)/$(ANDROID_PLUGIN)/$(ANDROID_PLUGIN).debug.aar   2>/dev/null || true
 	@echo "  • Copying Release AAR..."
-	@cp $(ANDROID_SOURCE_DIR)/build/outputs/aar/*-release.aar $(ANDROID_OUTPUT_DIR)/$(ANDROID_MODULE)/$(ANDROID_MODULE).release.aar 2>/dev/null || true
-	@touch $(ANDROID_OUTPUT_DIR)/$(ANDROID_MODULE)/.gdignore
+	@cp $(ANDROID_SOURCE_DIR)/build/outputs/aar/*-release.aar $(ANDROID_OUTPUT_DIR)/$(ANDROID_PLUGIN)/$(ANDROID_PLUGIN).release.aar 2>/dev/null || true
+	@touch $(ANDROID_OUTPUT_DIR)/$(ANDROID_PLUGIN)/.gdignore
 	@echo ""
 	@echo "====================================================================="
-	@echo "✓ Android RevenueCat module built successfully!"
+	@echo "✓ Android plugin built successfully!"
 	@echo "====================================================================="
 	@echo ""
 	@echo "Generated AARs:"
-	@ls -lh $(ANDROID_OUTPUT_DIR)/$(ANDROID_MODULE)/*.aar 2>/dev/null || echo "  (No AARs found)"
+	@ls -lh $(ANDROID_OUTPUT_DIR)/$(ANDROID_PLUGIN)/*.aar 2>/dev/null || echo "  (No AARs found)"
 
 # ============================================================================
 # Combined Targets
@@ -288,7 +294,7 @@ build-android:
 build-all: build-apple build-android
 	@echo ""
 	@echo "====================================================================="
-	@echo "✓✓✓ ALL REVENUECAT MODULES BUILT SUCCESSFULLY! ✓✓✓"
+	@echo "✓✓✓ ALL PLUGINS BUILT SUCCESSFULLY! ✓✓✓"
 	@echo "====================================================================="
 
 package:
@@ -296,23 +302,42 @@ package:
 	@echo "Creating package..."
 	@echo "====================================================================="
 	@echo ""
-	@echo "→ Creating package directory..."
-	@rm -rf godotx_revenue_cat
-	@mkdir -p godotx_revenue_cat
+	@rm -rf package
+	@mkdir -p package
 	@echo "→ Copying addons..."
-	@cp -a addons godotx_revenue_cat/
-	@echo "→ Copying iOS plugin..."
-	@cp -a ios godotx_revenue_cat/
+	@cp -a $(ADDONS_SOURCE_DIR) package/
+	@mkdir -p package/addons/$(PLUGIN_NAME)/bin/ios/
+	@mkdir -p package/addons/$(PLUGIN_NAME)/bin/android/
+	@echo "→ Copying Apple plugin..."
+	@cp -a $(IOS_OUTPUT_DIR)/* package/addons/$(PLUGIN_NAME)/bin/ios/
 	@echo "→ Copying Android plugin..."
-	@mkdir -p godotx_revenue_cat/android
-	@cp -a android/revenue_cat godotx_revenue_cat/android/
+	@cp -a $(ANDROID_OUTPUT_DIR)/* package/addons/$(PLUGIN_NAME)/bin/android/
 	@echo "→ Creating zip archive..."
-	@zip -ry godotx_revenue_cat.zip godotx_revenue_cat
-	@rm -rf godotx_revenue_cat
+	@cd package && zip -ry ../$(PLUGIN_NAME).zip .
 	@echo ""
 	@echo "====================================================================="
-	@echo "✓ Package created: godotx_revenue_cat.zip"
+	@echo "✓ Package created!"
 	@echo "====================================================================="
+
+# ============================================================================
+# Demo Targets
+# ============================================================================
+
+demo-setup:
+	@if [ ! -d "$(PACKAGE_DIR)" ]; then \
+		echo "→ You need to run 'make package' first!"; \
+		exit 1; \
+	fi
+	@echo "====================================================================="
+	@echo "Setting up demo..."
+	@echo "====================================================================="
+	@echo ""
+	@echo "→ Removing old files..."
+	@rm -rf $(DEMO_DIR)/addons
+	@echo "→ Copying new files..."
+	@cp -a $(PACKAGE_DIR)/* $(DEMO_DIR)/ && \
+	echo "→ Demo setup complete!" && \
+	echo "====================================================================="
 
 # ============================================================================
 # Clean Targets
@@ -323,11 +348,10 @@ clean:
 	@echo "Cleaning build artifacts..."
 	@echo "====================================================================="
 	@echo ""
-	@echo "→ Cleaning iOS RevenueCat..."
-	@rm -rf $(IOS_PLUGINS_DIR)/$(APPLE_MODULE)
-	@rm -rf $(IOS_SOURCE_DIR)/build
-	@echo "→ Cleaning Android RevenueCat..."
-	@rm -rf $(ANDROID_OUTPUT_DIR)/$(ANDROID_MODULE)
+	@echo "→ Cleaning general files..."
+	@rm -rf $(BUILD_ROOT_DIR)
+	@rm -rf $(PACKAGE_DIR)
+	@echo "→ Cleaning Android..."
 	@if [ -d "$(ANDROID_SOURCE_DIR)" ]; then \
 		(cd $(ANDROID_SOURCE_DIR) && ./gradlew clean); \
 	fi
@@ -338,15 +362,15 @@ clean:
 
 clean-godot:
 	@echo "====================================================================="
-	@echo "Removing Godot source..."
+	@echo "Removing Godot CPP source..."
 	@echo "====================================================================="
 	@echo ""
-	@if [ -d "$(GODOT_DIR)" ]; then \
-		echo "→ Removing Godot directory..."; \
-		rm -rf $(GODOT_DIR); \
-		echo "  ✓ Godot source removed"; \
+	@if [ -d "$(GODOT_CPP_DIR)" ]; then \
+		echo "→ Removing Godot CPP directory..."; \
+		rm -rf $(GODOT_CPP_DIR); \
+		echo "  ✓ Godot CPP source removed"; \
 	else \
-		echo "  • Godot directory does not exist"; \
+		echo "  • Godot CPP source directory does not exist"; \
 	fi
 	@echo ""
 	@echo "====================================================================="

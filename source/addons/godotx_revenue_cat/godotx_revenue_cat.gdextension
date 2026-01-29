@@ -1,0 +1,13 @@
+[configuration]
+entry_symbol = "godotx_revenuecat_library_init"
+compatibility_minimum = "4.5"
+
+[libraries]
+ios.debug = "res://addons/godotx_revenue_cat/bin/ios/revenue_cat/GodotxRevenueCat.debug.xcframework"
+ios.release = "res://addons/godotx_revenue_cat/bin/ios/revenue_cat/GodotxRevenueCat.release.xcframework"
+
+[dependencies]
+ios = {
+    "res://addons/godotx_revenue_cat/bin/ios/revenue_cat/RevenueCat.xcframework": "",
+    "res://addons/godotx_revenue_cat/bin/ios/revenue_cat/RevenueCatUI.xcframework": ""
+}

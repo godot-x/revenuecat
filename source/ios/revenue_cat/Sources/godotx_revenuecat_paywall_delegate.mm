@@ -1,5 +1,10 @@
 #import "godotx_revenuecat_paywall_delegate.h"
-#import "godotx_revenuecat.h"
+#import "godotx_revenuecat_helpers.h"
+
+#import <Foundation/Foundation.h>
+
+@import RevenueCat;
+@import RevenueCatUI;
 
 @implementation GodotxRevenueCatPaywallDelegate
 
@@ -10,7 +15,7 @@
         d["reason"] = reason;
     }
     d["entitlements"] = entitlements;
-    GodotxRevenueCat::get_singleton()->emit_signal("paywall_result", d);
+    getRevenueCatSingleton()->emit_signal("paywall_result", d);
 }
 
 - (void)paywallViewControllerDidStartPurchase:(RCPaywallViewController *)controller {

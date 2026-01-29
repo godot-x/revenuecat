@@ -34,8 +34,8 @@ jobs:
       - name: Setup Godot
         run: make setup-godot
 
-      - name: Build Godot headers
-        run: make build-godot-headers
+      - name: Build Godot
+        run: make build-godot
 
       - name: Setup SDK
         run: make setup-sdk

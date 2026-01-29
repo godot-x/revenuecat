@@ -8,7 +8,7 @@ var android_export_plugin: AndroidExportPlugin
 
 func _enter_tree() -> void:
 	android_export_plugin = AndroidExportPlugin.new()
-	
+
 	add_export_plugin(android_export_plugin)
 
 
@@ -24,18 +24,18 @@ func _exit_tree() -> void:
 class AndroidExportPlugin extends EditorExportPlugin:
 	func _get_name() -> String:
 		return PLUGIN_NAME
-	
-	
+
+
 	func _supports_platform(platform: EditorExportPlatform) -> bool:
 		return platform is EditorExportPlatformAndroid
-	
-	
+
+
 	func _get_export_options(platform: EditorExportPlatform) -> Array[Dictionary]:
 		var options: Array[Dictionary] = []
-		
+
 		if platform.get_os_name() != "Android":
 			return options
-		
+
 		# Enable RevenueCat
 		options.append({
 			"option": {
@@ -44,7 +44,7 @@ class AndroidExportPlugin extends EditorExportPlugin:
 			},
 			"default_value": true
 		})
-		
+
 		# RevenueCat version
 		options.append({
 			"option": {
@@ -53,7 +53,7 @@ class AndroidExportPlugin extends EditorExportPlugin:
 			},
 			"default_value": "9.19.4"
 		})
-		
+
 		# RevenueCat UI version
 		options.append({
 			"option": {
@@ -62,13 +62,13 @@ class AndroidExportPlugin extends EditorExportPlugin:
 			},
 			"default_value": "9.19.4"
 		})
-		
+
 		return options
-	
-	
+
+
 	func _get_android_dependencies(platform: EditorExportPlatform, debug: bool) -> PackedStringArray:
 		var dependencies: PackedStringArray = []
-		
+
 		if get_option("revenue_cat/enable_revenue_cat"):
 			# core
 			var version = get_option("revenue_cat/revenue_cat_version")
@@ -80,37 +80,37 @@ class AndroidExportPlugin extends EditorExportPlugin:
 			dependencies.append("com.revenuecat.purchases:purchases-ui:" + version_ui)
 			print("[RevenueCat] Adding RevenueCat UI dependency (v%s)" % version_ui)
 
-		
+
 		return dependencies
 
 
 	func _get_android_libraries(platform: EditorExportPlatform, debug: bool) -> PackedStringArray:
 		var libraries: PackedStringArray = []
 		var build_type: String = "debug" if debug else "release"
-		
+
 		# List of modules to check (in order)
 		var modules: Array[String] = []
-		
+
 		if get_option("revenue_cat/enable_revenue_cat"):
 			modules.append("revenue_cat")
-		
+
 		# Search for AARs in each module's directory
 		for module in modules:
-			var module_path: String = "res://android/" + module + "/"
+			var module_path: String = "res://addons/godotx_revenue_cat/bin/android/" + module + "/"
 			var aar_file_name: String = module + "." + build_type + ".aar"
 			var aar_full_path: String = module_path + aar_file_name
-			
+
 			if FileAccess.file_exists(aar_full_path):
 				# Add relative path from android/ directory
-				var rel_path: String = "../android/" + module + "/" + aar_file_name
+				var rel_path: String = aar_full_path.replace("res://", "")
 				libraries.append(rel_path)
 				print("[RevenueCat] Adding Android library (%s): %s" % [build_type, aar_file_name])
 			else:
 				push_warning("[RevenueCat] AAR not found: " + aar_full_path)
-		
+
 		if libraries.is_empty():
 			push_warning("[RevenueCat] No Android libraries found")
 		else:
 			print("[RevenueCat] Total Android libraries found: " + str(libraries.size()))
-		
+
 		return libraries

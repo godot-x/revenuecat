@@ -1,8 +1,12 @@
 #ifndef GODOTX_REVENUECAT_H
 #define GODOTX_REVENUECAT_H
 
-#include "core/object/class_db.h"
-#include "core/variant/variant.h"
+#include <godot_cpp/classes/object.hpp>
+#include <godot_cpp/variant/string.hpp>
+#include <godot_cpp/variant/array.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
+
+using namespace godot;
 
 class GodotxRevenueCat : public Object {
     GDCLASS(GodotxRevenueCat, Object);
@@ -11,9 +15,6 @@ protected:
     static void _bind_methods();
 
 public:
-    static GodotxRevenueCat *instance;
-    static GodotxRevenueCat *get_singleton();
-
     void initialize(String api_key, String user_id, bool debug);
     void get_customer_info();
     void purchase(String product_id);
@@ -27,8 +28,8 @@ public:
     void present_paywall(String offering_id);
     void restore_purchases();
 
-    GodotxRevenueCat();
-    ~GodotxRevenueCat();
+    GodotxRevenueCat() = default;
+    ~GodotxRevenueCat() = default;
 };
 
 #endif

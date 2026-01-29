@@ -1,4 +1,4 @@
-# Godot source (cloned for compilation)
+# Godot source
 godot/
 godot-cpp/
 
@@ -7,7 +7,6 @@ build/
 
 # Apple build artifacts
 /source/ios/*_sdk/
-/ios/
 
 # Android build artifacts
 /source/android/**/build/
@@ -15,7 +14,9 @@ build/
 /source/android/**/.kotlin/
 /source/android/**/local.properties
 /source/android/**/bin/
-/android/**/
+
+# Package
+/package
 
 # Godot generated files
 .godot/
@@ -35,3 +36,9 @@ Thumbs.db
 # Temp files
 temp/
 /*.zip
+
+# Demo temporary files
+demo/addons/
+demo/ios/
+demo/android/
+demo/build/
