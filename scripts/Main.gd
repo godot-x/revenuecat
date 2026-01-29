@@ -257,12 +257,32 @@ func _on_offerings_received(data):
 	log_message(dict_to_string(data))
 
 
-func _on_products_received(data):
+func _on_products_received(data: Dictionary):
 	log_message("🔔 SIGNAL: products")
-	if data.has("error") and not data["error"].is_empty():
-		log_message("   ❌ Error: %s" % data["error"])
-	if data.has("products"):
-		log_message(array_to_string(data["products"]))
+	
+	var error = data.get("error", "")
+	if error != "":
+		log_message("   ❌ Error: %s" % error)
+		return
+	
+	var raw_products = data.get("products", null)
+	if raw_products == null:
+		log_message("   ⚠️ No products found")
+		return
+	
+	var products_list: Array = []
+	
+	# ios - native array
+	if raw_products is Array:
+		products_list = raw_products
+	
+	# android - array list
+	elif raw_products is JavaObject:
+		var count: int = raw_products.call("size")
+		for i in range(count):
+			products_list.append(raw_products.call("get", i))
+	
+	log_message(array_to_string(products_list))
 
 
 func _on_login_finished(data):

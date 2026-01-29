@@ -25,6 +25,7 @@ import org.godotengine.godot.Godot
 import org.godotengine.godot.plugin.GodotPlugin
 import org.godotengine.godot.plugin.SignalInfo
 import org.godotengine.godot.plugin.UsedByGodot
+import java.util.ArrayList
 
 class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
 
@@ -266,25 +267,29 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
     fun fetch_products(ids: Array<String>) {
         Purchases.sharedInstance.getProductsWith(
             productIds = ids.toList(),
+
             onError = { error ->
                 val result = Dictionary()
-                result["products"] = arrayOf<Any>()
-                result["error"] = error.message
+                result["products"] = ArrayList<Dictionary>()
+                result["error"] = error.message ?: ""
                 emitOnMain("products", result)
             },
+
             onGetStoreProducts = { products ->
-                val arr = products.map { p ->
+                val list = ArrayList<Dictionary>()
+
+                for (p in products) {
                     val d = Dictionary()
                     d["id"] = p.id
                     d["title"] = p.title
                     d["description"] = p.description
                     d["price"] = p.price.formatted
                     d["amount"] = p.price.amountMicros / 1_000_000.0
-                    d
-                }.toTypedArray()
+                    list.add(d)
+                }
 
                 val result = Dictionary()
-                result["products"] = arr
+                result["products"] = list
                 result["error"] = ""
                 emitOnMain("products", result)
             }
