@@ -31,7 +31,7 @@ android {
 }
 
 dependencies {
-    compileOnly("org.godotengine:godot:4.5.1.stable")
+    compileOnly("org.godotengine:godot:4.6.0.stable")
 
     // RevenueCat
     implementation("com.revenuecat.purchases:purchases:9.19.4")
