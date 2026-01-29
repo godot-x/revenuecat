@@ -135,18 +135,36 @@ func _on_purchase_result(data):
 revenuecat.fetch_offerings()
 
 # Products (for custom UI)
-revenuecat.fetch_products(["premium_monthly", "premium_yearly"])
 revenuecat.products.connect(_on_products_received)
+revenuecat.fetch_products(["premium_monthly", "premium_yearly"])
 
-func _on_products_received(data):
-    if data["error"].is_empty():
-        var products = data["products"]
-        for product in products:
-            print("ID: ", product["id"])
-            print("Title: ", product["title"])
-            print("Price: ", product["price"])
-    else:
-        print("Error: ", data["error"])
+func _on_products_received(data: Dictionary):
+    var error = data.get("error", "")
+    if error != "":
+        print("Error: ", error)
+        return
+    
+    var raw_products = data.get("products", null)
+    if raw_products == null:
+        return
+    
+    var products_list: Array = []
+    
+    # ios - native array
+    if raw_products is Array:
+        products_list = raw_products
+    
+    # android - array list
+    elif raw_products is JavaObject:
+        var count: int = raw_products.call("size")
+        for i in range(count):
+            products_list.append(raw_products.call("get", i))
+    
+    # process products
+    for product in products_list:
+        print("ID: ", product["id"])
+        print("Title: ", product["title"])
+        print("Price: ", product["price"])
 ```
 
 ### Purchases Flows
