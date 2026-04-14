@@ -119,7 +119,7 @@ setup-sdk:
 		unzip -q $(TMP_DIR)/RevenueCat.zip -d $(TMP_DIR)/revenuecat_temp; \
 		echo "→ Moving to ios/revenue_cat..."; \
 		mkdir -p $(REVENUECAT_SDK_DIR); \
-		mv $(TMP_DIR)/revenuecat_temp/RevenueCat/* $(REVENUECAT_SDK_DIR)/; \
+		mv $(TMP_DIR)/revenuecat_temp/* $(REVENUECAT_SDK_DIR)/; \
 		touch $(REVENUECAT_SDK_DIR)/.gdignore; \
 		rm -rf $(TMP_DIR)/RevenueCat.zip $(TMP_DIR)/revenuecat_temp; \
 		echo "  ✓ RevenueCat SDK installed"; \
@@ -136,7 +136,7 @@ setup-sdk:
 		unzip -q $(TMP_DIR)/RevenueCatUI.zip -d $(TMP_DIR)/revenuecatui_temp; \
 		echo "→ Moving to ios/revenue_cat_ui..."; \
 		mkdir -p $(REVENUECAT_UI_SDK_DIR); \
-		mv $(TMP_DIR)/revenuecatui_temp/RevenueCatUI/* $(REVENUECAT_UI_SDK_DIR)/; \
+		mv $(TMP_DIR)/revenuecatui_temp/* $(REVENUECAT_UI_SDK_DIR)/; \
 		touch $(REVENUECAT_UI_SDK_DIR)/.gdignore; \
 		rm -rf $(TMP_DIR)/RevenueCatUI.zip $(TMP_DIR)/revenuecatui_temp; \
 		echo "  ✓ RevenueCatUI installed"; \
