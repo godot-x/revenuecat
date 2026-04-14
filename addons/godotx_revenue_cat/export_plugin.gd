@@ -51,16 +51,16 @@ class AndroidExportPlugin extends EditorExportPlugin:
 				"name": "revenue_cat/revenue_cat_version",
 				"type": TYPE_STRING
 			},
-			"default_value": "9.19.4"
+			"default_value": "10.1.2"
 		})
-		
+
 		# RevenueCat UI version
 		options.append({
 			"option": {
 				"name": "revenue_cat/revenue_cat_ui_version",
 				"type": TYPE_STRING
 			},
-			"default_value": "9.19.4"
+			"default_value": "10.1.2"
 		})
 		
 		return options
