@@ -25,7 +25,6 @@ import org.godotengine.godot.Godot
 import org.godotengine.godot.plugin.GodotPlugin
 import org.godotengine.godot.plugin.SignalInfo
 import org.godotengine.godot.plugin.UsedByGodot
-import java.util.ArrayList
 
 class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
 
@@ -270,14 +269,23 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
 
             onError = { error ->
                 val result = Dictionary()
-                result["products"] = ArrayList<Dictionary>()
+                // Empty Object[] (not ArrayList) — see the onGetStoreProducts note below.
+                result["products"] = arrayOfNulls<Any>(0)
                 result["error"] = error.message ?: ""
                 emitOnMain("products", result)
             },
 
             onGetStoreProducts = { products ->
-                val list = ArrayList<Dictionary>()
-
+                // Emit the products as an Object[] of Dictionary, NOT a java.util.ArrayList.
+                // Godot's JNI (jni_utils.cpp _jobject_to_variant) converts "[Ljava.lang.Object;"
+                // to a Godot Array, recursing into each element (so each Dictionary becomes a
+                // Godot Dictionary). It has no conversion case for java.util.ArrayList/List, so
+                // an ArrayList reaches GDScript as an opaque JavaObject whose .get(i) returns
+                // null — products/prices never load. Note Array<Dictionary> does NOT work either:
+                // the JNI check is an exact match on "[Ljava.lang.Object;", and Dictionary[] is
+                // "[Lorg.godotengine.godot.Dictionary;".
+                val arr = arrayOfNulls<Any>(products.size)
+                var i = 0
                 for (p in products) {
                     val d = Dictionary()
                     d["id"] = p.id
@@ -285,11 +293,11 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
                     d["description"] = p.description
                     d["price"] = p.price.formatted
                     d["amount"] = p.price.amountMicros / 1_000_000.0
-                    list.add(d)
+                    arr[i++] = d
                 }
 
                 val result = Dictionary()
-                result["products"] = list
+                result["products"] = arr
                 result["error"] = ""
                 emitOnMain("products", result)
             }
