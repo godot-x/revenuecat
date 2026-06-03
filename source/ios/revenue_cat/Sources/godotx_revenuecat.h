@@ -28,6 +28,7 @@ public:
     void present_paywall(String offering_id);
     void restore_purchases();
     void show_manage_subscriptions();
+    void set_attributes(Dictionary attributes);
 
     GodotxRevenueCat();
     ~GodotxRevenueCat();
