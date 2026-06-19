@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(~/Developer/workspaces/**)",
+      "Write(~/Developer/workspaces/**)",
+      "Edit(~/Developer/workspaces/**)",
+      "MultiEdit(~/Developer/workspaces/**)",
+      "Glob(~/Developer/workspaces/**)",
+      "Grep(~/Developer/workspaces/**)",
+      "LS(~/Developer/workspaces/**)",
+
+      "Bash(*)",
+
+      "WebFetch(*)",
+      "WebSearch"
+    ],
+    "deny": [
+      "Read(~/Developer/workspaces/**/.env)",
+      "Read(~/Developer/workspaces/**/.env.*)",
+      "Read(~/Developer/workspaces/**/secrets/**)",
+      "Read(~/Developer/workspaces/**/*.pem)",
+      "Read(~/Developer/workspaces/**/*.key)",
+      "Bash(rm -rf *)",
+      "Bash(sudo rm *)"
+    ]
+  }
+}
