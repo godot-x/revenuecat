@@ -40,7 +40,7 @@ APPLE_SDK_ARCHS  = iphoneos/arm64 iphonesimulator/arm64 iphonesimulator/x86_64
 # ============================================================================
 # Version Configuration
 # ============================================================================
-GODOT_VERSION = 4.6-stable
+GODOT_VERSION = 4.7-stable
 GODOT_REPO    = https://github.com/godotengine/godot.git
 REVENUECAT_VERSION = 5.67.2
 

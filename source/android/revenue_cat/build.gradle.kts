@@ -31,11 +31,10 @@ android {
 }
 
 dependencies {
-    compileOnly("org.godotengine:godot:4.6.0.stable")
+    compileOnly("org.godotengine:godot:4.7.0.stable")
 
     // RevenueCat
     implementation("com.revenuecat.purchases:purchases:10.1.2")
     implementation("com.revenuecat.purchases:purchases-ui:10.1.2")
     implementation("androidx.appcompat:appcompat:1.7.1")
 }
-
