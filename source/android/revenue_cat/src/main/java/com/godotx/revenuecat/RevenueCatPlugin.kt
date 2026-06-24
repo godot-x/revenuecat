@@ -275,16 +275,16 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
             },
 
             onGetStoreProducts = { products ->
-                val arr = arrayOfNulls<Any>(products.size)
-                var i = 0
-                for (p in products) {
-                    val d = Dictionary()
-                    d["id"] = p.id
-                    d["title"] = p.title
-                    d["description"] = p.description
-                    d["price"] = p.price.formatted
-                    d["amount"] = p.price.amountMicros / 1_000_000.0
-                    arr[i++] = d
+                val arr = Array<Any>(products.size) { index ->
+                    val p = products[index]
+
+                    Dictionary().apply {
+                        this["id"] = p.id
+                        this["title"] = p.title
+                        this["description"] = p.description
+                        this["price"] = p.price.formatted
+                        this["amount"] = p.price.amountMicros / 1_000_000.0
+                    }
                 }
 
                 val result = Dictionary()
