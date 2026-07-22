@@ -1,6 +1,6 @@
 plugins {
     id("com.android.library") version "8.13.2"
-    id("org.jetbrains.kotlin.android") version "2.4.0"
+    id("org.jetbrains.kotlin.android") version "2.4.10"
 }
 
 android {
@@ -34,7 +34,7 @@ dependencies {
     compileOnly("org.godotengine:godot:4.7.0.stable")
 
     // RevenueCat
-    implementation("com.revenuecat.purchases:purchases:10.10.0")
-    implementation("com.revenuecat.purchases:purchases-ui:10.10.0")
+    implementation("com.revenuecat.purchases:purchases:10.14.1")
+    implementation("com.revenuecat.purchases:purchases-ui:10.14.1")
     implementation("androidx.appcompat:appcompat:1.7.1")
 }
