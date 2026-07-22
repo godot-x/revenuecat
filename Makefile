@@ -42,7 +42,7 @@ APPLE_SDK_ARCHS  = iphoneos/arm64 iphonesimulator/arm64 iphonesimulator/x86_64
 # ============================================================================
 GODOT_VERSION = 4.7-stable
 GODOT_REPO    = https://github.com/godotengine/godot.git
-REVENUECAT_VERSION = 5.79.0
+REVENUECAT_VERSION = 5.81.1
 
 # ============================================================================
 # Help
@@ -306,9 +306,11 @@ package:
 	@echo "→ Copying Android plugin..."
 	@mkdir -p godotx_revenue_cat/android
 	@cp -a android/revenue_cat godotx_revenue_cat/android/
+	@echo "→ Copying license and readme..."
+	@cp -a LICENSE godotx_revenue_cat/
+	@cp -a README.md godotx_revenue_cat/
 	@echo "→ Creating zip archive..."
 	@zip -ry godotx_revenue_cat.zip godotx_revenue_cat
-	@rm -rf godotx_revenue_cat
 	@echo ""
 	@echo "====================================================================="
 	@echo "✓ Package created: godotx_revenue_cat.zip"

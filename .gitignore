@@ -36,3 +36,4 @@ Thumbs.db
 # Temp files
 temp/
 /*.zip
+/godotx_revenue_cat/
