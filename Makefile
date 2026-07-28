@@ -307,8 +307,8 @@ package:
 	@mkdir -p godotx_revenue_cat/android
 	@cp -a android/revenue_cat godotx_revenue_cat/android/
 	@echo "→ Copying license and readme..."
-	@cp -a LICENSE godotx_revenue_cat/
-	@cp -a README.md godotx_revenue_cat/
+	@cp -a LICENSE godotx_revenue_cat/addons/godotx_revenue_cat/
+	@cp -a README.md godotx_revenue_cat/addons/godotx_revenue_cat/
 	@echo "→ Creating zip archive..."
 	@zip -ry godotx_revenue_cat.zip godotx_revenue_cat
 	@echo ""
