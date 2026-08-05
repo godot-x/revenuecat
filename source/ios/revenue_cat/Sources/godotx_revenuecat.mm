@@ -61,6 +61,7 @@ void GodotxRevenueCat::_bind_methods() {
     ADD_SIGNAL(MethodInfo("entitlement", PropertyInfo(Variant::STRING, "id"), PropertyInfo(Variant::BOOL, "active")));
     ADD_SIGNAL(MethodInfo("paywall_result", PropertyInfo(Variant::DICTIONARY, "data")));
     ADD_SIGNAL(MethodInfo("restore_finished", PropertyInfo(Variant::DICTIONARY, "data")));
+    ADD_SIGNAL(MethodInfo("manage_subscriptions_finished", PropertyInfo(Variant::DICTIONARY, "data")));
 
     ClassDB::bind_method(D_METHOD("initialize", "api_key", "user_id", "debug"), &GodotxRevenueCat::initialize);
     ClassDB::bind_method(D_METHOD("get_customer_info"), &GodotxRevenueCat::get_customer_info);
@@ -74,6 +75,7 @@ void GodotxRevenueCat::_bind_methods() {
     ClassDB::bind_method(D_METHOD("present_paywall", "offering_id"), &GodotxRevenueCat::present_paywall);
     ClassDB::bind_method(D_METHOD("check_entitlement", "entitlement_id"), &GodotxRevenueCat::check_entitlement);
     ClassDB::bind_method(D_METHOD("restore_purchases"), &GodotxRevenueCat::restore_purchases);
+    ClassDB::bind_method(D_METHOD("show_manage_subscriptions"), &GodotxRevenueCat::show_manage_subscriptions);
 }
 
 void GodotxRevenueCat::initialize(String api_key, String user_id, bool debug) {
@@ -282,6 +284,20 @@ void GodotxRevenueCat::restore_purchases() {
             d["active_entitlements"] = count;
             if (error) d["error"] = err;
             emit_signal("restore_finished", d);
+        });
+    }];
+}
+
+void GodotxRevenueCat::show_manage_subscriptions() {
+    [[RCPurchases sharedPurchases] showManageSubscriptionsWithCompletion:^(NSError *error) {
+        String err = error ? String::utf8(error.localizedDescription.UTF8String) : "";
+        bool success = error == nil;
+
+        dispatch_async(dispatch_get_main_queue(), ^{
+            Dictionary d;
+            d["success"] = success;
+            if (error) d["error"] = err;
+            emit_signal("manage_subscriptions_finished", d);
         });
     }];
 }
