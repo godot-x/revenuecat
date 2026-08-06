@@ -86,6 +86,9 @@ func connect_signals() -> void:
 	revenuecat.paywall_result.connect(_on_paywall_result)
 	revenuecat.restore_finished.connect(_on_restore_finished)
 
+	if revenuecat.has_signal("manage_subscriptions_finished"):
+		revenuecat.manage_subscriptions_finished.connect(_on_manage_subscriptions_finished)
+
 	log_message("🔌 Connected all RevenueCat signals")
 
 
@@ -221,6 +224,16 @@ func _on_restore_purchases_pressed():
 	log_message("➡️ restore_purchases()")
 
 
+func _on_manage_subscriptions_pressed():
+	if revenuecat == null:
+		return
+	if not revenuecat.has_method("show_manage_subscriptions"):
+		log_message("⚠️ show_manage_subscriptions() not available on this platform")
+		return
+	revenuecat.show_manage_subscriptions()
+	log_message("➡️ show_manage_subscriptions()")
+
+
 func _on_clear_log_pressed():
 	log_output.text = ""
 
@@ -312,4 +325,9 @@ func _on_paywall_result(data):
 
 func _on_restore_finished(data):
 	log_message("🔔 SIGNAL: restore_finished")
+	log_message(dict_to_string(data))
+
+
+func _on_manage_subscriptions_finished(data):
+	log_message("🔔 SIGNAL: manage_subscriptions_finished")
 	log_message(dict_to_string(data))
