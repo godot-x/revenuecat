@@ -132,8 +132,57 @@ func _on_purchase_result(data):
 
 ```gdscript
 # Offerings
+revenuecat.offerings.connect(_on_offerings_received)
 revenuecat.fetch_offerings()
 
+func _on_offerings_received(data: Dictionary):
+    var error = data.get("error", "")
+    if error != "":
+        print("Error: ", error)
+        return
+
+    # The current offering's identifier, and its packages ready to display.
+    print("Current offering: ", data["identifier"])
+
+    for pkg in data["packages"]:
+        var product = pkg["product"]
+        print("Package: ", pkg["identifier"], " (", pkg["package_type"], ")")
+        print("  ", product["title"], " - ", product["price"])
+
+    # Every offering, including the current one.
+    for offering in data["offerings"]:
+        print(offering["identifier"], " has ", offering["packages"].size(), " packages")
+```
+
+The `offerings` signal carries the same keys and the same Godot types on iOS and Android:
+
+| Key | Type | Notes |
+|-----|------|-------|
+| `error` | `String` | `""` when the fetch succeeded |
+| `identifier` | `String` | The current offering's identifier, `""` if there is none |
+| `packages` | `Array` | The current offering's packages, `[]` if there is none |
+| `offerings` | `Array` | Every offering: `{ "identifier": String, "packages": Array }` |
+
+Each entry of a `packages` array is a `Dictionary`:
+
+| Key | Type | Example |
+|-----|------|---------|
+| `identifier` | `String` | `"$rc_monthly"` |
+| `package_type` | `String` | `"MONTHLY"`, `"ANNUAL"`, `"SIX_MONTH"`, `"THREE_MONTH"`, `"TWO_MONTH"`, `"WEEKLY"`, `"LIFETIME"`, `"CUSTOM"`, `"UNKNOWN"` |
+| `product` | `Dictionary` | The underlying store product |
+
+Each `product` uses the same keys as `fetch_products`, plus `currency`:
+
+| Key | Type | Example |
+|-----|------|---------|
+| `id` | `String` | `"premium_monthly"` |
+| `title` | `String` | `"Premium"` |
+| `description` | `String` | `"Unlock everything"` |
+| `price` | `String` | `"$4.99"` (localized) |
+| `amount` | `float` | `4.99` |
+| `currency` | `String` | `"USD"` |
+
+```gdscript
 # Products (for custom UI)
 revenuecat.products.connect(_on_products_received)
 revenuecat.fetch_products(["premium_monthly", "premium_yearly"])
@@ -172,6 +221,19 @@ func _on_products_received(data: Dictionary):
 ```gdscript
 revenuecat.purchase("premium_monthly")
 ```
+
+Purchase a package from an offering instead of a bare product id. Pass `""` as the offering id to
+use the current offering. This is the only way to buy a Google Play subscription that has more than
+one base plan, because the `Package` carries the base plan and a product id cannot.
+
+```gdscript
+revenuecat.purchase_package("", "$rc_monthly")
+revenuecat.purchase_package("default", "$rc_annual")
+```
+
+Both paths emit the same `purchase_result` dictionary, so a single handler serves both. On failure
+`error` is one of the SDK's own messages or `offering_not_found`, `package_not_found`, or
+`activity_null` (Android only, as with `purchase`).
 
 ```gdscript
 revenuecat.restore_purchases()
@@ -270,6 +332,7 @@ revenuecat/
 | `fetch_offerings()` | Retrieves offerings |
 | `fetch_products(ids)` | Retrieves product details |
 | `purchase(id)` | Starts purchase flow |
+| `purchase_package(offering_id, package_id)` | Starts purchase flow for a package (`offering_id` `""` = current offering) |
 | `login(user_id)` | Authenticate user |
 | `logout()` | Anonymous reset |
 | `is_subscriber()` | Returns subscription state |
