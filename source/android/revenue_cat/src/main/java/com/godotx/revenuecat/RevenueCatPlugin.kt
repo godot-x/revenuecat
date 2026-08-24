@@ -297,21 +297,29 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
         })
     }
 
+    private fun emitRestoreFinished(success: Boolean, entitlements: Int, error: String) {
+        emitOnMain(
+            "restore_finished",
+            dictOf(
+                "success" to success,
+                "restored" to (entitlements > 0),
+                "active_entitlements" to entitlements,
+                "error" to error
+            )
+        )
+    }
+
     @UsedByGodot
     fun restore_purchases() {
-        Purchases.sharedInstance.restorePurchasesWith() { customerInfo ->
-            currentCustomerInfo = customerInfo
-
-            val restoredCount = customerInfo.entitlements.active.size
-
-            emitOnMain(
-                "restore_finished",
-                dictOf(
-                    "active_entitlements" to restoredCount,
-                    "restored" to (restoredCount > 0)
-                )
-            )
-        }
+        Purchases.sharedInstance.restorePurchasesWith(
+            onError = { error ->
+                emitRestoreFinished(false, 0, error.message)
+            },
+            onSuccess = { customerInfo ->
+                currentCustomerInfo = customerInfo
+                emitRestoreFinished(true, customerInfo.entitlements.active.size, "")
+            }
+        )
     }
 
     private fun productDict(product: StoreProduct): Dictionary {

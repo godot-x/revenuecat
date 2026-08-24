@@ -331,8 +331,9 @@ void GodotxRevenueCat::restore_purchases() {
         dispatch_async(dispatch_get_main_queue(), ^{
             Dictionary d;
             d["success"] = success;
+            d["restored"] = count > 0;
             d["active_entitlements"] = count;
-            if (error) d["error"] = err;
+            d["error"] = err;
             emit_signal("restore_finished", d);
         });
     }];

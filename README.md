@@ -236,8 +236,29 @@ Both paths emit the same `purchase_result` dictionary, so a single handler serve
 `activity_null` (Android only, as with `purchase`).
 
 ```gdscript
+revenuecat.restore_finished.connect(_on_restore_finished)
 revenuecat.restore_purchases()
+
+func _on_restore_finished(data: Dictionary):
+    if not data["success"]:
+        print("Restore failed: ", data["error"])
+        return
+
+    if data["restored"]:
+        print("Restored ", data["active_entitlements"], " entitlements")
+    else:
+        print("Nothing to restore")
 ```
+
+`restore_finished` always fires — once, on success and on failure alike — and carries the same keys
+and the same Godot types on iOS and Android:
+
+| Key | Type | Notes |
+|-----|------|-------|
+| `success` | `bool` | `false` only when the restore itself failed |
+| `restored` | `bool` | `true` when at least one entitlement is active afterwards |
+| `active_entitlements` | `int` | Count of active entitlements, `0` on failure |
+| `error` | `String` | The SDK's own message, `""` on success |
 
 ### Show Native Paywall
 
