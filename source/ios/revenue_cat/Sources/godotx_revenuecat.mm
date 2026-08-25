@@ -101,7 +101,7 @@ void GodotxRevenueCat::initialize(String api_key, String user_id, bool debug) {
 
 void GodotxRevenueCat::get_customer_info() {
     [[RCPurchases sharedPurchases] getCustomerInfoWithCompletion:^(RCCustomerInfo *info, NSError *error) {
-        currentCustomerInfo = info;
+        if (info) currentCustomerInfo = info;
         int count = info ? (int)info.entitlements.active.count : 0;
         String err = error ? String(error.localizedDescription.UTF8String) : "";
         
@@ -134,7 +134,7 @@ void GodotxRevenueCat::purchase(String pid) {
         RCStoreProduct *p = products.firstObject;
         
         [[RCPurchases sharedPurchases] purchaseProduct:p withCompletion:^(RCStoreTransaction *tx, RCCustomerInfo *info, NSError *error, BOOL cancelled) {
-            currentCustomerInfo = info;
+            if (info) currentCustomerInfo = info;
             int count = info ? (int)info.entitlements.active.count : 0;
             String err = error ? String(error.localizedDescription.UTF8String) : "";
             String tid = tx && tx.transactionIdentifier ? String(tx.transactionIdentifier.UTF8String) : "";
@@ -254,7 +254,7 @@ void GodotxRevenueCat::login(String user_id) {
     NSString *uid = @(user_id.utf8().get_data());
     
     [[RCPurchases sharedPurchases] logIn:uid completion:^(RCCustomerInfo *info, BOOL created, NSError *error) {
-        currentCustomerInfo = info;
+        if (info) currentCustomerInfo = info;
         int count = info ? (int)info.entitlements.active.count : 0;
         bool success = error == nil;
         String err = error ? String(error.localizedDescription.UTF8String) : "";
@@ -272,7 +272,7 @@ void GodotxRevenueCat::login(String user_id) {
 
 void GodotxRevenueCat::logout() {
     [[RCPurchases sharedPurchases] logOutWithCompletion:^(RCCustomerInfo *info, NSError *error) {
-        currentCustomerInfo = info;
+        if (info) currentCustomerInfo = info;
         int count = info ? (int)info.entitlements.active.count : 0;
         bool success = error == nil;
         String err = error ? String(error.localizedDescription.UTF8String) : "";
@@ -298,7 +298,7 @@ void GodotxRevenueCat::check_entitlement(String entitlement_id) {
     NSString *eid = @(entitlement_id.utf8().get_data());
     
     [[RCPurchases sharedPurchases] getCustomerInfoWithCompletion:^(RCCustomerInfo *info, NSError *error) {
-        currentCustomerInfo = info;
+        if (info) currentCustomerInfo = info;
         bool active = false;
         
         if (info) {
@@ -322,7 +322,7 @@ bool GodotxRevenueCat::has_entitlement(String entitlement_id) {
 
 void GodotxRevenueCat::restore_purchases() {
     [[RCPurchases sharedPurchases] restorePurchasesWithCompletion:^(RCCustomerInfo *info, NSError *error) {
-        currentCustomerInfo = info;
+        if (info) currentCustomerInfo = info;
 
         int count = info ? (int)info.entitlements.active.count : 0;
         String err = error ? String(error.localizedDescription.UTF8String) : "";
@@ -481,7 +481,7 @@ void GodotxRevenueCat::purchase_package(String offering_id, String package_id) {
         // Purchasing the Package (not a re-resolved product id) is what carries the
         // store-side subscription option that purchase(String) cannot express.
         [[RCPurchases sharedPurchases] purchasePackage:pkg withCompletion:^(RCStoreTransaction *tx, RCCustomerInfo *info, NSError *purchase_error, BOOL cancelled) {
-            currentCustomerInfo = info;
+            if (info) currentCustomerInfo = info;
             int count = info ? (int)info.entitlements.active.count : 0;
             String err = purchase_error ? String(purchase_error.localizedDescription.UTF8String) : "";
             String tid = tx && tx.transactionIdentifier ? String(tx.transactionIdentifier.UTF8String) : "";
