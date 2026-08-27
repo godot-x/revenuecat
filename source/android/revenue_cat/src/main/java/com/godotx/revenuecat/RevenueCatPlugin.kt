@@ -6,7 +6,9 @@ import androidx.core.content.ContextCompat
 import com.revenuecat.purchases.CacheFetchPolicy
 import com.revenuecat.purchases.CustomerInfo
 import com.revenuecat.purchases.LogLevel
+import com.revenuecat.purchases.Offering
 import com.revenuecat.purchases.Offerings
+import com.revenuecat.purchases.Package
 import com.revenuecat.purchases.PurchaseParams
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
@@ -223,20 +225,136 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
         })
     }
 
+    private fun emitPurchaseResult(
+        cancelled: Boolean,
+        entitlements: Int,
+        error: String,
+        productId: String,
+        transactionId: String
+    ) {
+        val d = Dictionary()
+        d["cancelled"] = cancelled
+        d["active_entitlements"] = entitlements
+        d["error"] = error
+        d["product_id"] = productId
+        d["transaction_id"] = transactionId
+        emitOnMain("purchase_result", d)
+    }
+
+    @UsedByGodot
+    fun purchase_package(offering_id: String, package_id: String) {
+        val a = act()
+        if (a == null) {
+            emitPurchaseResult(false, 0, "activity_null", "", "")
+            return
+        }
+
+        Purchases.sharedInstance.getOfferings(object : ReceiveOfferingsCallback {
+            override fun onError(error: PurchasesError) {
+                emitPurchaseResult(false, 0, error.message, "", "")
+            }
+
+            override fun onReceived(offerings: Offerings) {
+                val offering =
+                    if (offering_id.isNotEmpty()) offerings.all[offering_id] else offerings.current
+
+                if (offering == null) {
+                    emitPurchaseResult(false, 0, "offering_not_found", "", "")
+                    return
+                }
+
+                val pkg = offering.availablePackages.firstOrNull { it.identifier == package_id }
+
+                if (pkg == null) {
+                    emitPurchaseResult(false, 0, "package_not_found", "", "")
+                    return
+                }
+
+                // Purchasing the Package (not a re-resolved product id) is what carries the
+                // Google Play base plan / subscriptionOption that purchase(String) cannot express.
+                val params = PurchaseParams.Builder(a, pkg).build()
+
+                Purchases.sharedInstance.purchase(params, object : PurchaseCallback {
+                    override fun onError(error: PurchasesError, userCancelled: Boolean) {
+                        emitPurchaseResult(userCancelled, 0, error.message, pkg.product.id, "")
+                    }
+
+                    override fun onCompleted(
+                        storeTransaction: StoreTransaction,
+                        customerInfo: CustomerInfo
+                    ) {
+                        currentCustomerInfo = customerInfo
+                        emitPurchaseResult(
+                            false,
+                            customerInfo.entitlements.active.size,
+                            "",
+                            pkg.product.id,
+                            storeTransaction.orderId ?: ""
+                        )
+                    }
+                })
+            }
+        })
+    }
+
+    private fun emitRestoreFinished(success: Boolean, entitlements: Int, error: String) {
+        emitOnMain(
+            "restore_finished",
+            dictOf(
+                "success" to success,
+                "restored" to (entitlements > 0),
+                "active_entitlements" to entitlements,
+                "error" to error
+            )
+        )
+    }
+
     @UsedByGodot
     fun restore_purchases() {
-        Purchases.sharedInstance.restorePurchasesWith() { customerInfo ->
-            currentCustomerInfo = customerInfo
+        Purchases.sharedInstance.restorePurchasesWith(
+            onError = { error ->
+                emitRestoreFinished(false, 0, error.message)
+            },
+            onSuccess = { customerInfo ->
+                currentCustomerInfo = customerInfo
+                emitRestoreFinished(true, customerInfo.entitlements.active.size, "")
+            }
+        )
+    }
 
-            val restoredCount = customerInfo.entitlements.active.size
+    private fun productDict(product: StoreProduct): Dictionary {
+        return Dictionary().apply {
+            this["id"] = product.id
+            this["title"] = product.title
+            this["description"] = product.description
+            this["price"] = product.price.formatted
+            this["amount"] = product.price.amountMicros / 1_000_000.0
+            this["currency"] = product.price.currencyCode
+        }
+    }
 
-            emitOnMain(
-                "restore_finished",
-                dictOf(
-                    "active_entitlements" to restoredCount,
-                    "restored" to (restoredCount > 0)
-                )
-            )
+    private fun packageDict(pkg: Package): Dictionary {
+        return Dictionary().apply {
+            this["identifier"] = pkg.identifier
+            this["package_type"] = pkg.packageType.name
+            this["product"] = productDict(pkg.product)
+        }
+    }
+
+    // Object[], never ArrayList and never Array<Dictionary>: Godot's JNI
+    // (jni_utils.cpp _jobject_to_variant) matches exactly "[Ljava.lang.Object;" to build a
+    // Godot Array, recursing into each element. Anything else reaches GDScript as an opaque
+    // JavaObject. Same constraint fetch_products is written against.
+    private fun packagesArray(packages: List<Package>): Array<Any> {
+        return Array<Any>(packages.size) { index -> packageDict(packages[index]) }
+    }
+
+    private fun offeringsArray(offerings: List<Offering>): Array<Any> {
+        return Array<Any>(offerings.size) { index ->
+            Dictionary().apply {
+                this["identifier"] = offerings[index].identifier
+                this["packages"] = packagesArray(offerings[index].availablePackages)
+            }
         }
     }
 
@@ -245,18 +363,23 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
         Purchases.sharedInstance.getOfferings(
             object : ReceiveOfferingsCallback {
                 override fun onError(error: PurchasesError) {
-                    emitOnMain("offerings", dictOf("error" to error.message))
+                    val result = Dictionary()
+                    result["error"] = error.message
+                    result["identifier"] = ""
+                    result["packages"] = emptyArray<Any>()
+                    result["offerings"] = emptyArray<Any>()
+                    emitOnMain("offerings", result)
                 }
 
                 override fun onReceived(offerings: Offerings) {
                     val current = offerings.current
-                    emitOnMain(
-                        "offerings",
-                        dictOf(
-                            "identifier" to (current?.identifier ?: ""),
-                            "available_packages" to (current?.availablePackages?.size ?: 0)
-                        )
-                    )
+
+                    val result = Dictionary()
+                    result["error"] = ""
+                    result["identifier"] = current?.identifier ?: ""
+                    result["packages"] = packagesArray(current?.availablePackages ?: emptyList())
+                    result["offerings"] = offeringsArray(offerings.all.values.toList())
+                    emitOnMain("offerings", result)
                 }
             }
         )

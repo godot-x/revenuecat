@@ -17,6 +17,7 @@ public:
     void initialize(String api_key, String user_id, bool debug);
     void get_customer_info();
     void purchase(String product_id);
+    void purchase_package(String offering_id, String package_id);
     void fetch_offerings();
     void fetch_products(Array ids);
     void login(String user_id);

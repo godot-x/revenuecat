@@ -66,6 +66,7 @@ void GodotxRevenueCat::_bind_methods() {
     ClassDB::bind_method(D_METHOD("initialize", "api_key", "user_id", "debug"), &GodotxRevenueCat::initialize);
     ClassDB::bind_method(D_METHOD("get_customer_info"), &GodotxRevenueCat::get_customer_info);
     ClassDB::bind_method(D_METHOD("purchase", "product_id"), &GodotxRevenueCat::purchase);
+    ClassDB::bind_method(D_METHOD("purchase_package", "offering_id", "package_id"), &GodotxRevenueCat::purchase_package);
     ClassDB::bind_method(D_METHOD("fetch_offerings"), &GodotxRevenueCat::fetch_offerings);
     ClassDB::bind_method(D_METHOD("fetch_products", "ids"), &GodotxRevenueCat::fetch_products);
     ClassDB::bind_method(D_METHOD("login", "user_id"), &GodotxRevenueCat::login);
@@ -100,7 +101,7 @@ void GodotxRevenueCat::initialize(String api_key, String user_id, bool debug) {
 
 void GodotxRevenueCat::get_customer_info() {
     [[RCPurchases sharedPurchases] getCustomerInfoWithCompletion:^(RCCustomerInfo *info, NSError *error) {
-        currentCustomerInfo = info;
+        if (info) currentCustomerInfo = info;
         int count = info ? (int)info.entitlements.active.count : 0;
         String err = error ? String(error.localizedDescription.UTF8String) : "";
         
@@ -133,7 +134,7 @@ void GodotxRevenueCat::purchase(String pid) {
         RCStoreProduct *p = products.firstObject;
         
         [[RCPurchases sharedPurchases] purchaseProduct:p withCompletion:^(RCStoreTransaction *tx, RCCustomerInfo *info, NSError *error, BOOL cancelled) {
-            currentCustomerInfo = info;
+            if (info) currentCustomerInfo = info;
             int count = info ? (int)info.entitlements.active.count : 0;
             String err = error ? String(error.localizedDescription.UTF8String) : "";
             String tid = tx && tx.transactionIdentifier ? String(tx.transactionIdentifier.UTF8String) : "";
@@ -151,22 +152,71 @@ void GodotxRevenueCat::purchase(String pid) {
     }];
 }
 
+// Matches PackageType.name on Android (the Kotlin enum constant name), so package_type is
+// the same string on both platforms. Not RCPackage.stringFrom:, which yields "$rc_monthly".
+static String godotx_revenuecat_package_type_name(RCPackageType type) {
+    switch (type) {
+        case RCPackageTypeCustom: return "CUSTOM";
+        case RCPackageTypeLifetime: return "LIFETIME";
+        case RCPackageTypeAnnual: return "ANNUAL";
+        case RCPackageTypeSixMonth: return "SIX_MONTH";
+        case RCPackageTypeThreeMonth: return "THREE_MONTH";
+        case RCPackageTypeTwoMonth: return "TWO_MONTH";
+        case RCPackageTypeMonthly: return "MONTHLY";
+        case RCPackageTypeWeekly: return "WEEKLY";
+        default: return "UNKNOWN";
+    }
+}
+
+static Dictionary godotx_revenuecat_product_dict(RCStoreProduct *p) {
+    Dictionary o;
+    o["id"] = p.productIdentifier ? String(p.productIdentifier.UTF8String) : "";
+    o["title"] = p.localizedTitle ? String(p.localizedTitle.UTF8String) : "";
+    o["description"] = p.localizedDescription ? String(p.localizedDescription.UTF8String) : "";
+    o["price"] = p.localizedPriceString ? String(p.localizedPriceString.UTF8String) : "";
+    o["amount"] = (double)p.price.doubleValue;
+    o["currency"] = p.currencyCode ? String(p.currencyCode.UTF8String) : "";
+    return o;
+}
+
+static Array godotx_revenuecat_packages_array(NSArray<RCPackage *> *packages) {
+    Array arr;
+    for (RCPackage *pkg in packages) {
+        Dictionary d;
+        d["identifier"] = pkg.identifier ? String(pkg.identifier.UTF8String) : "";
+        d["package_type"] = godotx_revenuecat_package_type_name(pkg.packageType);
+        d["product"] = godotx_revenuecat_product_dict(pkg.storeProduct);
+        arr.append(d);
+    }
+    return arr;
+}
+
 void GodotxRevenueCat::fetch_offerings() {
     [[RCPurchases sharedPurchases] getOfferingsWithCompletion:^(RCOfferings *offers, NSError *error) {
-        String identifier = "";
-        int count = 0;
-        String err = error ? String(error.localizedDescription.UTF8String) : "";
-        
-        if (!error && offers && offers.current) {
-            identifier = String(offers.current.identifier.UTF8String);
-            count = (int)offers.current.availablePackages.count;
-        }
-        
         dispatch_async(dispatch_get_main_queue(), ^{
             Dictionary d;
-            if (error) d["error"] = err;
-            d["identifier"] = identifier;
-            d["packages_count"] = count;
+            d["error"] = error ? String(error.localizedDescription.UTF8String) : "";
+            d["identifier"] = "";
+            d["packages"] = Array();
+            d["offerings"] = Array();
+
+            if (!error && offers) {
+                Array all;
+                for (NSString *key in offers.all) {
+                    RCOffering *off = offers.all[key];
+                    Dictionary o;
+                    o["identifier"] = off.identifier ? String(off.identifier.UTF8String) : "";
+                    o["packages"] = godotx_revenuecat_packages_array(off.availablePackages);
+                    all.append(o);
+                }
+                d["offerings"] = all;
+
+                if (offers.current) {
+                    d["identifier"] = String(offers.current.identifier.UTF8String);
+                    d["packages"] = godotx_revenuecat_packages_array(offers.current.availablePackages);
+                }
+            }
+
             emit_signal("offerings", d);
         });
     }];
@@ -204,7 +254,7 @@ void GodotxRevenueCat::login(String user_id) {
     NSString *uid = @(user_id.utf8().get_data());
     
     [[RCPurchases sharedPurchases] logIn:uid completion:^(RCCustomerInfo *info, BOOL created, NSError *error) {
-        currentCustomerInfo = info;
+        if (info) currentCustomerInfo = info;
         int count = info ? (int)info.entitlements.active.count : 0;
         bool success = error == nil;
         String err = error ? String(error.localizedDescription.UTF8String) : "";
@@ -222,7 +272,7 @@ void GodotxRevenueCat::login(String user_id) {
 
 void GodotxRevenueCat::logout() {
     [[RCPurchases sharedPurchases] logOutWithCompletion:^(RCCustomerInfo *info, NSError *error) {
-        currentCustomerInfo = info;
+        if (info) currentCustomerInfo = info;
         int count = info ? (int)info.entitlements.active.count : 0;
         bool success = error == nil;
         String err = error ? String(error.localizedDescription.UTF8String) : "";
@@ -248,7 +298,7 @@ void GodotxRevenueCat::check_entitlement(String entitlement_id) {
     NSString *eid = @(entitlement_id.utf8().get_data());
     
     [[RCPurchases sharedPurchases] getCustomerInfoWithCompletion:^(RCCustomerInfo *info, NSError *error) {
-        currentCustomerInfo = info;
+        if (info) currentCustomerInfo = info;
         bool active = false;
         
         if (info) {
@@ -272,7 +322,7 @@ bool GodotxRevenueCat::has_entitlement(String entitlement_id) {
 
 void GodotxRevenueCat::restore_purchases() {
     [[RCPurchases sharedPurchases] restorePurchasesWithCompletion:^(RCCustomerInfo *info, NSError *error) {
-        currentCustomerInfo = info;
+        if (info) currentCustomerInfo = info;
 
         int count = info ? (int)info.entitlements.active.count : 0;
         String err = error ? String(error.localizedDescription.UTF8String) : "";
@@ -281,8 +331,9 @@ void GodotxRevenueCat::restore_purchases() {
         dispatch_async(dispatch_get_main_queue(), ^{
             Dictionary d;
             d["success"] = success;
+            d["restored"] = count > 0;
             d["active_entitlements"] = count;
-            if (error) d["error"] = err;
+            d["error"] = err;
             emit_signal("restore_finished", d);
         });
     }];
@@ -374,5 +425,70 @@ void GodotxRevenueCat::present_paywall(String offering_id) {
             
             [root presentViewController:pw animated:YES completion:nil];
         });
+    }];
+}
+
+static void godotx_revenuecat_emit_purchase_result(bool cancelled, int entitlements, const String &error, const String &product_id, const String &transaction_id) {
+    Dictionary d;
+    d["cancelled"] = cancelled;
+    d["active_entitlements"] = entitlements;
+    d["error"] = error;
+    d["product_id"] = product_id;
+    d["transaction_id"] = transaction_id;
+    GodotxRevenueCat::get_singleton()->emit_signal("purchase_result", d);
+}
+
+void GodotxRevenueCat::purchase_package(String offering_id, String package_id) {
+    NSString *oid = offering_id.is_empty() ? nil : @(offering_id.utf8().get_data());
+    NSString *pkg_id = @(package_id.utf8().get_data());
+
+    [[RCPurchases sharedPurchases] getOfferingsWithCompletion:^(RCOfferings *offers, NSError *error) {
+        if (error || !offers) {
+            String err = error ? String(error.localizedDescription.UTF8String) : "offering_not_found";
+
+            dispatch_async(dispatch_get_main_queue(), ^{
+                godotx_revenuecat_emit_purchase_result(false, 0, err, "", "");
+            });
+            return;
+        }
+
+        RCOffering *off = oid ? offers.all[oid] : offers.current;
+
+        if (!off) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                godotx_revenuecat_emit_purchase_result(false, 0, "offering_not_found", "", "");
+            });
+            return;
+        }
+
+        RCPackage *pkg = nil;
+        for (RCPackage *p in off.availablePackages) {
+            if ([p.identifier isEqualToString:pkg_id]) {
+                pkg = p;
+                break;
+            }
+        }
+
+        if (!pkg) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                godotx_revenuecat_emit_purchase_result(false, 0, "package_not_found", "", "");
+            });
+            return;
+        }
+
+        String pid = pkg.storeProduct.productIdentifier ? String(pkg.storeProduct.productIdentifier.UTF8String) : "";
+
+        // Purchasing the Package (not a re-resolved product id) is what carries the
+        // store-side subscription option that purchase(String) cannot express.
+        [[RCPurchases sharedPurchases] purchasePackage:pkg withCompletion:^(RCStoreTransaction *tx, RCCustomerInfo *info, NSError *purchase_error, BOOL cancelled) {
+            if (info) currentCustomerInfo = info;
+            int count = info ? (int)info.entitlements.active.count : 0;
+            String err = purchase_error ? String(purchase_error.localizedDescription.UTF8String) : "";
+            String tid = tx && tx.transactionIdentifier ? String(tx.transactionIdentifier.UTF8String) : "";
+
+            dispatch_async(dispatch_get_main_queue(), ^{
+                godotx_revenuecat_emit_purchase_result(cancelled, count, err, pid, tid);
+            });
+        }];
     }];
 }
