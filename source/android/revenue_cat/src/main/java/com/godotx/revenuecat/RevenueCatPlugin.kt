@@ -74,15 +74,11 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
         return d
     }
 
-    // Builds the customer-info payload shared by customer_info / customer_info_changed.
-    // active_ids carries the identifiers of every active entitlement so GDScript can gate
-    // on a specific entitlement instead of a bare count.
     private fun customerInfoDict(info: CustomerInfo): Dictionary {
         val d = Dictionary()
         d["active_entitlements"] = info.entitlements.active.size
-        // String[] (not ArrayList) so Godot's JNI converts it to a PackedStringArray.
-        // jni_utils.cpp _jobject_to_variant has a "[Ljava.lang.String;" case but none for
-        // java.util.ArrayList, which would otherwise reach GDScript as an opaque JavaObject.
+        // Must stay String[]: Godot's JNI conversion has no case for a java.util.List, which
+        // would reach GDScript as an opaque JavaObject instead of a PackedStringArray.
         d["active_ids"] = info.entitlements.active.keys.toTypedArray()
         return d
     }
@@ -142,9 +138,6 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
 
         Purchases.configure(builder.build())
 
-        // Live entitlement updates (renewals, expiry, restore, cross-device sync). Without
-        // this listener the customer_info_changed signal never fires on Android, so a
-        // subscription that changes after launch (or on another device) is never reflected.
         Purchases.sharedInstance.updatedCustomerInfoListener =
             UpdatedCustomerInfoListener { customerInfo ->
                 currentCustomerInfo = customerInfo
@@ -154,14 +147,13 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
         get_customer_info()
     }
 
-    // Forward subscriber attributes to RevenueCat (e.g. analytics identifiers used for
-    // attribution/integrations). Mirrors the iOS set_attributes binding.
     @UsedByGodot
     fun set_attributes(attributes: Dictionary) {
         val map = HashMap<String, String>()
-        for (key in attributes.keys) {
-            val value = attributes[key]
-            map[key.toString()] = value?.toString() ?: ""
+        for ((key, value) in attributes) {
+            if (value is String) {
+                map[key] = value
+            }
         }
         Purchases.sharedInstance.setAttributes(map)
     }

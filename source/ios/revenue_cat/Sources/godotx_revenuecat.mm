@@ -7,16 +7,13 @@
 
 GodotxRevenueCat *GodotxRevenueCat::instance = nullptr;
 
-// Builds the customer-info payload shared by customer_info / customer_info_changed.
-// active_ids carries the identifiers of every active entitlement so GDScript can gate
-// on a specific entitlement instead of a bare count.
 static Dictionary godotx_customer_info_dict(RCCustomerInfo *info) {
     Dictionary d;
     d["active_entitlements"] = info ? (int)info.entitlements.active.count : 0;
-    Array ids;
+    PackedStringArray ids;
     if (info) {
         for (NSString *key in info.entitlements.active.allKeys) {
-            ids.append(String::utf8(key.UTF8String));
+            ids.push_back(String::utf8(key.UTF8String));
         }
     }
     d["active_ids"] = ids;
@@ -369,8 +366,13 @@ void GodotxRevenueCat::set_attributes(Dictionary attributes) {
     NSMutableDictionary<NSString *, NSString *> *native = [NSMutableDictionary dictionary];
     Array keys = attributes.keys();
     for (int i = 0; i < keys.size(); i++) {
-        String k = keys[i];
-        String v = attributes[keys[i]];
+        Variant key = keys[i];
+        Variant value = attributes.get(key, Variant());
+        if (key.get_type() != Variant::STRING || value.get_type() != Variant::STRING) {
+            continue;
+        }
+        String k = key;
+        String v = value;
         native[@(k.utf8().get_data())] = @(v.utf8().get_data());
     }
     [[[RCPurchases sharedPurchases] attribution] setAttributes:native];
