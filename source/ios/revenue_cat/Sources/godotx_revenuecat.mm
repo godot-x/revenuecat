@@ -7,6 +7,19 @@
 
 GodotxRevenueCat *GodotxRevenueCat::instance = nullptr;
 
+static Dictionary godotx_customer_info_dict(RCCustomerInfo *info) {
+    Dictionary d;
+    d["active_entitlements"] = info ? (int)info.entitlements.active.count : 0;
+    PackedStringArray ids;
+    if (info) {
+        for (NSString *key in info.entitlements.active.allKeys) {
+            ids.push_back(String::utf8(key.UTF8String));
+        }
+    }
+    d["active_ids"] = ids;
+    return d;
+}
+
 @interface GodotxRevenueCatDelegate : NSObject <RCPurchasesDelegate>
 @end
 
@@ -18,12 +31,9 @@ static RCCustomerInfo *currentCustomerInfo = nullptr;
 
 - (void)purchases:(RCPurchases *)purchases receivedUpdatedCustomerInfo:(RCCustomerInfo *)info {
     currentCustomerInfo = info;
-    int count = info ? (int)info.entitlements.active.count : 0;
-    
+
     dispatch_async(dispatch_get_main_queue(), ^{
-        Dictionary d;
-        d["active_entitlements"] = count;
-        GodotxRevenueCat::get_singleton()->emit_signal("customer_info_changed", d);
+        GodotxRevenueCat::get_singleton()->emit_signal("customer_info_changed", godotx_customer_info_dict(info));
     });
 }
 
@@ -77,6 +87,7 @@ void GodotxRevenueCat::_bind_methods() {
     ClassDB::bind_method(D_METHOD("check_entitlement", "entitlement_id"), &GodotxRevenueCat::check_entitlement);
     ClassDB::bind_method(D_METHOD("restore_purchases"), &GodotxRevenueCat::restore_purchases);
     ClassDB::bind_method(D_METHOD("show_manage_subscriptions"), &GodotxRevenueCat::show_manage_subscriptions);
+    ClassDB::bind_method(D_METHOD("set_attributes", "attributes"), &GodotxRevenueCat::set_attributes);
 }
 
 void GodotxRevenueCat::initialize(String api_key, String user_id, bool debug) {
@@ -102,12 +113,10 @@ void GodotxRevenueCat::initialize(String api_key, String user_id, bool debug) {
 void GodotxRevenueCat::get_customer_info() {
     [[RCPurchases sharedPurchases] getCustomerInfoWithCompletion:^(RCCustomerInfo *info, NSError *error) {
         if (info) currentCustomerInfo = info;
-        int count = info ? (int)info.entitlements.active.count : 0;
-        String err = error ? String(error.localizedDescription.UTF8String) : "";
-        
+        String err = error ? String::utf8(error.localizedDescription.UTF8String) : "";
+
         dispatch_async(dispatch_get_main_queue(), ^{
-            Dictionary d;
-            d["active_entitlements"] = count;
+            Dictionary d = godotx_customer_info_dict(info);
             if (error) d["error"] = err;
             emit_signal("customer_info", d);
         });
@@ -136,8 +145,8 @@ void GodotxRevenueCat::purchase(String pid) {
         [[RCPurchases sharedPurchases] purchaseProduct:p withCompletion:^(RCStoreTransaction *tx, RCCustomerInfo *info, NSError *error, BOOL cancelled) {
             if (info) currentCustomerInfo = info;
             int count = info ? (int)info.entitlements.active.count : 0;
-            String err = error ? String(error.localizedDescription.UTF8String) : "";
-            String tid = tx && tx.transactionIdentifier ? String(tx.transactionIdentifier.UTF8String) : "";
+            String err = error ? String::utf8(error.localizedDescription.UTF8String) : "";
+            String tid = tx && tx.transactionIdentifier ? String::utf8(tx.transactionIdentifier.UTF8String) : "";
             
             dispatch_async(dispatch_get_main_queue(), ^{
                 Dictionary d;
@@ -234,10 +243,10 @@ void GodotxRevenueCat::fetch_products(Array ids) {
             Array arr;
             for (RCStoreProduct *p in products) {
                 Dictionary o;
-                o["id"] = p.productIdentifier ? String(p.productIdentifier.UTF8String) : "";
-                o["title"] = p.localizedTitle ? String(p.localizedTitle.UTF8String) : "";
-                o["description"] = p.localizedDescription ? String(p.localizedDescription.UTF8String) : "";
-                o["price"] = p.localizedPriceString ? String(p.localizedPriceString.UTF8String) : "";
+                o["id"] = p.productIdentifier ? String::utf8(p.productIdentifier.UTF8String) : "";
+                o["title"] = p.localizedTitle ? String::utf8(p.localizedTitle.UTF8String) : "";
+                o["description"] = p.localizedDescription ? String::utf8(p.localizedDescription.UTF8String) : "";
+                o["price"] = p.localizedPriceString ? String::utf8(p.localizedPriceString.UTF8String) : "";
                 o["amount"] = (double)p.price.doubleValue;
                 arr.append(o);
             }
@@ -257,7 +266,7 @@ void GodotxRevenueCat::login(String user_id) {
         if (info) currentCustomerInfo = info;
         int count = info ? (int)info.entitlements.active.count : 0;
         bool success = error == nil;
-        String err = error ? String(error.localizedDescription.UTF8String) : "";
+        String err = error ? String::utf8(error.localizedDescription.UTF8String) : "";
         
         dispatch_async(dispatch_get_main_queue(), ^{
             Dictionary d;
@@ -275,7 +284,7 @@ void GodotxRevenueCat::logout() {
         if (info) currentCustomerInfo = info;
         int count = info ? (int)info.entitlements.active.count : 0;
         bool success = error == nil;
-        String err = error ? String(error.localizedDescription.UTF8String) : "";
+        String err = error ? String::utf8(error.localizedDescription.UTF8String) : "";
         
         dispatch_async(dispatch_get_main_queue(), ^{
             Dictionary d;
@@ -325,7 +334,7 @@ void GodotxRevenueCat::restore_purchases() {
         if (info) currentCustomerInfo = info;
 
         int count = info ? (int)info.entitlements.active.count : 0;
-        String err = error ? String(error.localizedDescription.UTF8String) : "";
+        String err = error ? String::utf8(error.localizedDescription.UTF8String) : "";
         bool success = error == nil;
 
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -351,6 +360,22 @@ void GodotxRevenueCat::show_manage_subscriptions() {
             emit_signal("manage_subscriptions_finished", d);
         });
     }];
+}
+
+void GodotxRevenueCat::set_attributes(Dictionary attributes) {
+    NSMutableDictionary<NSString *, NSString *> *native = [NSMutableDictionary dictionary];
+    Array keys = attributes.keys();
+    for (int i = 0; i < keys.size(); i++) {
+        Variant key = keys[i];
+        Variant value = attributes.get(key, Variant());
+        if (key.get_type() != Variant::STRING || value.get_type() != Variant::STRING) {
+            continue;
+        }
+        String k = key;
+        String v = value;
+        native[@(k.utf8().get_data())] = @(v.utf8().get_data());
+    }
+    [[[RCPurchases sharedPurchases] attribution] setAttributes:native];
 }
 
 static UIViewController *godotx_revenuecat_get_root_view_controller() {

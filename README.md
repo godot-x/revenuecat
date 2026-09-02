@@ -274,12 +274,50 @@ revenuecat.has_entitlement("premium_access")
 revenuecat.check_entitlement("premium_access")
 ```
 
+### Customer Info
+
+```gdscript
+revenuecat.customer_info_changed.connect(_on_customer_info_changed)
+revenuecat.get_customer_info()
+
+func _on_customer_info_changed(data: Dictionary):
+    if "premium_access" in data["active_ids"]:
+        print("Premium is active")
+    else:
+        print("Premium is not active")
+```
+
+`customer_info` (the reply to `get_customer_info()`) and `customer_info_changed` (emitted whenever
+RevenueCat updates the entitlements: a renewal, an expiry, a restore, or a purchase made on another
+device) carry the same keys and the same Godot types on iOS and Android:
+
+| Key | Type | Notes |
+|-----|------|-------|
+| `active_entitlements` | `int` | Count of active entitlements, `0` if there are none |
+| `active_ids` | `PackedStringArray` | The active entitlements' identifiers, `[]` if there are none |
+
+Use `active_ids` to gate on a specific entitlement, and `active_entitlements` only when a count is
+all you need. When a `get_customer_info()` fetch fails, `customer_info` carries an `error` key with
+the SDK's own message.
+
 ### Login & Logout
 
 ```gdscript
 revenuecat.login("user_123")
 revenuecat.logout()
 ```
+
+### Subscriber Attributes
+
+```gdscript
+revenuecat.set_attributes({
+    "$email": "player@example.com",
+    "favorite_mode": "endless",
+})
+```
+
+RevenueCat subscriber attributes are string keys with string values, so only entries whose key and
+value are both a `String` are forwarded. Any other entry is ignored, on iOS and Android alike.
 
 ## Advanced Configuration
 
@@ -350,6 +388,7 @@ revenuecat/
 | Method | Description |
 |--------|-------------|
 | `initialize(api_key, user_id, debug)` | Initializes SDK |
+| `get_customer_info()` | Requests the current customer info |
 | `fetch_offerings()` | Retrieves offerings |
 | `fetch_products(ids)` | Retrieves product details |
 | `purchase(id)` | Starts purchase flow |
@@ -361,12 +400,14 @@ revenuecat/
 | `present_paywall(offering)` | Shows native UI |
 | `check_entitlement(id)` | Checks entitlement |
 | `restore_purchases` | Retrieves purchases |
+| `set_attributes(attributes)` | Sets subscriber attributes (string keys and string values only) |
 
 ### Signals
 
 | Signal | Args | Description |
 |--------|------|-------------|
 | `customer_info_changed` | `data: Dictionary` | On customer update |
+| `customer_info` | `data: Dictionary` | Customer info fetch result |
 | `purchase_result` | `data: Dictionary` | On purchase finish |
 | `offerings` | `data: Dictionary` | Offerings received |
 | `products` | `data: Dictionary` | Products received |

@@ -19,6 +19,7 @@ import com.revenuecat.purchases.interfaces.LogInCallback
 import com.revenuecat.purchases.interfaces.PurchaseCallback
 import com.revenuecat.purchases.interfaces.ReceiveCustomerInfoCallback
 import com.revenuecat.purchases.interfaces.ReceiveOfferingsCallback
+import com.revenuecat.purchases.interfaces.UpdatedCustomerInfoListener
 import com.revenuecat.purchases.models.StoreProduct
 import com.revenuecat.purchases.models.StoreTransaction
 import com.revenuecat.purchases.restorePurchasesWith
@@ -70,6 +71,15 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
         for ((k, v) in pairs) {
             d[k] = v ?: ""
         }
+        return d
+    }
+
+    private fun customerInfoDict(info: CustomerInfo): Dictionary {
+        val d = Dictionary()
+        d["active_entitlements"] = info.entitlements.active.size
+        // Must stay String[]: Godot's JNI conversion has no case for a java.util.List, which
+        // would reach GDScript as an opaque JavaObject instead of a PackedStringArray.
+        d["active_ids"] = info.entitlements.active.keys.toTypedArray()
         return d
     }
 
@@ -128,7 +138,24 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
 
         Purchases.configure(builder.build())
 
+        Purchases.sharedInstance.updatedCustomerInfoListener =
+            UpdatedCustomerInfoListener { customerInfo ->
+                currentCustomerInfo = customerInfo
+                emitOnMain("customer_info_changed", customerInfoDict(customerInfo))
+            }
+
         get_customer_info()
+    }
+
+    @UsedByGodot
+    fun set_attributes(attributes: Dictionary) {
+        val map = HashMap<String, String>()
+        for ((key, value) in attributes) {
+            if (value is String) {
+                map[key] = value
+            }
+        }
+        Purchases.sharedInstance.setAttributes(map)
     }
 
     @UsedByGodot
@@ -142,10 +169,7 @@ class RevenueCatPlugin(godot: Godot) : GodotPlugin(godot) {
 
                 override fun onReceived(customerInfo: CustomerInfo) {
                     currentCustomerInfo = customerInfo
-                    emitOnMain(
-                        "customer_info",
-                        dictOf("active_entitlements" to customerInfo.entitlements.active.size)
-                    )
+                    emitOnMain("customer_info", customerInfoDict(customerInfo))
                 }
             }
         )
